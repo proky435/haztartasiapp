@@ -2,41 +2,125 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px;
-  border-bottom: 1px solid #ddd;
+  padding: 15px;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  background-color: white;
+  transition: all 0.2s ease;
+}
+
+.product-list-item.expired {
+  border-left: 4px solid #dc3545;
+  background-color: #fff5f5;
+}
+
+.product-list-item.expires-today {
+  border-left: 4px solid #fd7e14;
+  background-color: #fff8f0;
+}
+
+.product-list-item.expires-soon {
+  border-left: 4px solid #ffc107;
+  background-color: #fffbf0;
+}
+
+.product-info {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
 }
 
 .product-name {
-  flex-grow: 1;
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+.product-details {
+  display: flex;
+  gap: 15px;
+  font-size: 14px;
+}
+
+.product-location {
+  color: #6c757d;
+  background-color: #f8f9fa;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.expiry-date {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.expiry-date.expired {
+  background-color: #dc3545;
+  color: white;
+}
+
+.expiry-date.expires-today {
+  background-color: #fd7e14;
+  color: white;
+}
+
+.expiry-date.expires-soon {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.expiry-date.expires-ok {
+  background-color: #28a745;
+  color: white;
 }
 
 .quantity-controls {
   display: flex;
   align-items: center;
+  margin: 0 15px;
 }
 
 .quantity-controls button {
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  padding: 5px 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  margin: 0 5px;
   cursor: pointer;
+  border-radius: 4px;
+  font-size: 14px;
+  min-width: 35px;
+}
+
+.quantity-controls button:hover {
+  background-color: #0056b3;
 }
 
 .product-quantity {
-  padding: 0 10px;
+  font-weight: bold;
+  margin: 0 10px;
+  min-width: 30px;
+  text-align: center;
 }
 
 .delete-button {
-  background-color: #ff4d4d;
+  background-color: #dc3545;
   color: white;
   border: none;
-  padding: 5px 10px;
-  border-radius: 3px;
+  padding: 8px 15px;
   cursor: pointer;
-  margin-left: 10px;
+  border-radius: 4px;
+  font-size: 14px;
 }
 
-/* Media query for smaller screens */
+.delete-button:hover {
+  background-color: #c82333;
+}
+
 @media (max-width: 768px) {
   .product-list-item {
     flex-direction: column;

@@ -1,0 +1,140 @@
+.notification-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  animation: slideDown 0.3s ease-out;
+}
+
+.notification-banner.expired {
+  background-color: #dc3545;
+  color: white;
+}
+
+.notification-banner.today {
+  background-color: #fd7e14;
+  color: white;
+}
+
+.notification-banner.soon {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.notification-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.notification-text {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.notification-text strong {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.notification-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.product-name {
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.notification-banner.soon .product-name {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.more-items {
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.dismiss-button {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.dismiss-button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.notification-banner.soon .dismiss-button:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .notification-banner {
+    padding: 12px 15px;
+  }
+  
+  .notification-content {
+    gap: 8px;
+  }
+  
+  .notification-icon {
+    font-size: 20px;
+  }
+  
+  .notification-text strong {
+    font-size: 14px;
+  }
+  
+  .notification-details {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .dismiss-button {
+    font-size: 20px;
+    width: 30px;
+    height: 30px;
+  }
+}
