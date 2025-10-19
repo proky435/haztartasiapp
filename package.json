@@ -1,0 +1,13 @@
+{
+  "name": "haztartasi-app",
+  "version": "1.0.0",
+  "description": "Okos háztartási készletkezelő alkalmazás",
+  "main": "index.js",
+  "scripts": {
+    "start": "cd client && npm start",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
