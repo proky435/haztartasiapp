@@ -1,0 +1,20 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "C:\\Users\\DELL\\Desktop\\GITHUB\\haztartasiapp\\server\\logs\\.fbab37153109235480ade69ba1de847167f5cf8a-audit.json",
+    "files": [
+        {
+            "date": 1760975290116,
+            "name": "C:\\Users\\DELL\\Desktop\\GITHUB\\haztartasiapp\\server\\logs\\combined-2025-10-20.log",
+            "hash": "27fbf08131545d4cfff04bff90b78d3dc9047634f28bd50488370d4237c37f40"
+        },
+        {
+            "date": 1760997649695,
+            "name": "C:\\Users\\DELL\\Desktop\\GITHUB\\haztartasiapp\\server\\logs\\combined-2025-10-21.log",
+            "hash": "c230540af46fe42cadc6ababc1ff70fdaa8e7dcd0d83880d32958d8a2c3957ca"
+        }
+    ],
+    "hashType": "sha256"
+}

@@ -37,9 +37,9 @@ function ProductListItem({ product, onUpdate, onDelete }) {
         </div>
       </div>
       <div className="quantity-controls">
-        <button onClick={() => onUpdate(product.id, product.quantity - 1)}>-</button>
+        <button onClick={() => onUpdate(product.id, parseFloat(product.quantity) - 1)}>-</button>
         <span className="product-quantity">{product.quantity}</span>
-        <button onClick={() => onUpdate(product.id, product.quantity + 1)}>+</button>
+        <button onClick={() => onUpdate(product.id, parseFloat(product.quantity) + 1)}>+</button>
       </div>
       <button className="delete-button" onClick={() => onDelete(product.id)}>Törlés</button>
     </div>

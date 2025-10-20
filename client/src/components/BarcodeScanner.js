@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Quagga from 'quagga';
+import productsService from '../services/productsService';
 import './BarcodeScanner.css';
 import { isCameraSupported, isSecureContext } from '../utils/cameraUtils';
 
@@ -78,7 +79,7 @@ function BarcodeScanner({ onScan, onClose }) {
           }
         });
 
-        Quagga.onDetected((result) => {
+        Quagga.onDetected(async (result) => {
           const code = result.codeResult.code;
           console.log('Vonalkód felismerve:', code);
           
@@ -91,7 +92,26 @@ function BarcodeScanner({ onScan, onClose }) {
             }
           }
           
-          onScanRef.current(code);
+          // Termék keresése a backend API-ban
+          try {
+            setIsScanning(true);
+            const product = await productsService.getProductByBarcode(code);
+            
+            if (product) {
+              // Termék találva
+              const formattedProduct = productsService.formatProductForDisplay(product);
+              onScanRef.current(code, formattedProduct);
+            } else {
+              // Termék nem található
+              onScanRef.current(code, null);
+            }
+          } catch (error) {
+            console.error('Product lookup error:', error);
+            // Hiba esetén is visszaadjuk a vonalkódot
+            onScanRef.current(code, null);
+          } finally {
+            setIsScanning(false);
+          }
         });
 
         Quagga.start((startErr) => {

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import authService from '../services/authService';
 import './LoginPage.css';
 
 function LoginPage({ onLogin }) {
@@ -27,27 +28,27 @@ function LoginPage({ onLogin }) {
     }
   };
 
-  const validateForm = () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validáció
     const newErrors = {};
-
-    // Email validáció
+    
     if (!formData.email) {
-      newErrors.email = 'Email cím kötelező';
+      newErrors.email = 'Email cím megadása kötelező';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Érvénytelen email cím';
     }
-
-    // Jelszó validáció
+    
     if (!formData.password) {
-      newErrors.password = 'Jelszó kötelező';
+      newErrors.password = 'Jelszó megadása kötelező';
     } else if (formData.password.length < 6) {
       newErrors.password = 'A jelszónak legalább 6 karakter hosszúnak kell lennie';
     }
-
-    // Regisztráció esetén további validációk
+    
     if (!isLogin) {
       if (!formData.name) {
-        newErrors.name = 'Név kötelező';
+        newErrors.name = 'Név megadása kötelező';
       }
       
       if (!formData.confirmPassword) {
@@ -56,34 +57,56 @@ function LoginPage({ onLogin }) {
         newErrors.confirmPassword = 'A jelszavak nem egyeznek';
       }
     }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
     
-    if (!validateForm()) {
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
-
+    
     setIsLoading(true);
-
+    setErrors({});
+    
     try {
-      // Szimulált API hívás
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      let response;
       
-      // Demo felhasználó bejelentkeztetése
-      const userData = {
-        id: 1,
-        name: isLogin ? 'Demo Felhasználó' : formData.name,
-        email: formData.email
-      };
+      if (isLogin) {
+        // Bejelentkezés
+        response = await authService.login({
+          email: formData.email,
+          password: formData.password
+        });
+      } else {
+        // Regisztráció
+        response = await authService.register({
+          email: formData.email,
+          password: formData.password,
+          confirmPassword: formData.confirmPassword,
+          name: formData.name
+        });
+      }
       
-      onLogin(userData);
+      // Sikeres autentikáció
+      onLogin(response.user);
+      
     } catch (error) {
-      setErrors({ general: 'Hiba történt. Próbáld újra!' });
+      console.error('Auth error:', error);
+      
+      // Hiba kezelése
+      if (error.data && error.data.details) {
+        // Validációs hibák
+        const apiErrors = {};
+        error.data.details.forEach(detail => {
+          if (detail.path) {
+            apiErrors[detail.path] = detail.msg;
+          }
+        });
+        setErrors(apiErrors);
+      } else {
+        // Általános hiba
+        setErrors({
+          general: error.data?.message || error.message || 'Hiba történt a bejelentkezés során'
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -98,6 +121,23 @@ function LoginPage({ onLogin }) {
       name: ''
     });
     setErrors({});
+  };
+
+  const handleDemoLogin = async () => {
+    setIsLoading(true);
+    setErrors({});
+    
+    try {
+      const response = await authService.demoLogin();
+      onLogin(response.user);
+    } catch (error) {
+      console.error('Demo login error:', error);
+      setErrors({
+        general: 'Demo bejelentkezés sikertelen. Ellenőrizd, hogy a backend szerver fut-e.'
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -207,9 +247,28 @@ function LoginPage({ onLogin }) {
             </p>
           </div>
 
-          <div className="demo-info">
-            <p><strong>Demo verzió:</strong></p>
-            <p>Bármilyen email és jelszó (min. 6 karakter) használható</p>
+          <div className="demo-section">
+            <div className="divider">
+              <span>vagy</span>
+            </div>
+            <button 
+              type="button" 
+              className="demo-button"
+              onClick={handleDemoLogin}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <span className="loading-spinner">🔄</span>
+              ) : (
+                <>
+                  <span className="demo-icon">🚀</span>
+                  Demo bejelentkezés
+                </>
+              )}
+            </button>
+            <p className="demo-info">
+              Próbáld ki az alkalmazást demo adatokkal
+            </p>
           </div>
         </div>
       </div>

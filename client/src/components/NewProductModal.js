@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import './NewProductModal.css';
 import BarcodeScanner from './BarcodeScanner';
 import SimpleBarcodeScanner from './SimpleBarcodeScanner';
 import SimpleAutoScanner from './SimpleAutoScanner';
 import DateOCRScanner from './DateOCRScanner';
 import CameraWarning from './CameraWarning';
 import ErrorBoundary from './ErrorBoundary';
-import axios from 'axios';
-import { isSecureContext } from '../utils/cameraUtils';
+import ProductRenameModal from './ProductRenameModal';
+import productsService from '../services/productsService';
+import { isSecureContext, isCameraSupported } from '../utils/cameraUtils';
+import './NewProductModal.css';
 
 function NewProductModal({ onClose, onAdd }) {
   const [name, setName] = useState('');
@@ -21,31 +22,65 @@ function NewProductModal({ onClose, onAdd }) {
   const [showCameraWarning, setShowCameraWarning] = useState(false);
   const [pendingCameraAction, setPendingCameraAction] = useState(null);
   const [useSimpleScanner, setUseSimpleScanner] = useState(true); // Alapértelmezetten egyszerű scanner
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [currentProduct, setCurrentProduct] = useState(null);
 
-  // Open Food Facts API hívás vonalkód alapján
+  // Backend API hívás vonalkód alapján
   const fetchProductByBarcode = async (barcodeValue) => {
     setIsLoadingProduct(true);
     try {
-      const response = await axios.get(`https://world.openfoodfacts.org/api/v0/product/${barcodeValue}.json`);
-      if (response.data.status === 1) {
-        const product = response.data.product;
-        setName(product.product_name || 'Ismeretlen termék');
+      const product = await productsService.getProductByBarcode(barcodeValue);
+      
+      if (product) {
+        const formattedProduct = productsService.formatProductForDisplay(product);
+        setName(formattedProduct.displayName || 'Ismeretlen termék');
         setBarcode(barcodeValue);
+        setCurrentProduct(product); // Termék mentése átnevezéshez
       } else {
         setBarcode(barcodeValue);
         setName(''); // Ismeretlen termék, kézi bevitel szükséges
+        // Létrehozunk egy placeholder product objektumot az átnevezéshez
+        setCurrentProduct({
+          barcode: barcodeValue,
+          name: 'Ismeretlen termék',
+          isUnknown: true
+        });
       }
     } catch (error) {
       console.error('Hiba a termék lekérdezésében:', error);
-      setBarcode(barcodeValue);
+      
+      // Ha 404 hiba és van canCreateCustom flag, akkor ismeretlen vonalkód
+      if (error.status === 404 && error.data?.canCreateCustom) {
+        setBarcode(barcodeValue);
+        setName(''); // Kézi bevitel szükséges
+        // Létrehozunk egy placeholder product objektumot az átnevezéshez
+        setCurrentProduct({
+          barcode: barcodeValue,
+          name: 'Ismeretlen termék',
+          isUnknown: true
+        });
+      } else {
+        setBarcode(barcodeValue);
+        setName(''); // Hiba esetén kézi bevitel
+        setCurrentProduct(null);
+      }
     } finally {
       setIsLoadingProduct(false);
     }
   };
 
-  const handleBarcodeScanned = (scannedBarcode) => {
+  const handleBarcodeScanned = (scannedBarcode, productData = null) => {
     setShowBarcodeScanner(false);
-    fetchProductByBarcode(scannedBarcode);
+    
+    if (productData) {
+      // Termék adatok már megvannak a scanner-től
+      setBarcode(scannedBarcode);
+      setName(productData.displayName || '');
+      setIsLoadingProduct(false);
+    } else {
+      // Fallback: kézi lekérdezés
+      fetchProductByBarcode(scannedBarcode);
+    }
   };
 
   const handleDateDetected = (detectedDate) => {
@@ -77,6 +112,19 @@ function NewProductModal({ onClose, onAdd }) {
     // Itt maradunk a manuális bevitelnél
   };
 
+  // Termék átnevezés kezelése
+  const handleRenameProduct = () => {
+    if (currentProduct) {
+      setShowRenameModal(true);
+    }
+  };
+
+  const handleProductRenamed = (renamedProduct) => {
+    setName(renamedProduct.name);
+    setCurrentProduct(renamedProduct);
+    setShowRenameModal(false);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (name && quantity > 0) {
@@ -97,14 +145,31 @@ function NewProductModal({ onClose, onAdd }) {
         <form onSubmit={handleSubmit}>
           <label>
             Termék Neve:
-            <input 
-              type="text" 
-              name="name" 
-              value={name} 
-              onChange={(e) => setName(e.target.value)} 
-              required 
-              disabled={isLoadingProduct}
-            />
+            <div className="name-input-group">
+              <input 
+                type="text" 
+                name="name" 
+                value={name} 
+                onChange={(e) => setName(e.target.value)} 
+                required 
+                disabled={isLoadingProduct}
+              />
+              {currentProduct && (
+                <button 
+                  type="button" 
+                  onClick={handleRenameProduct}
+                  className="rename-button"
+                  title="Termék átnevezése"
+                >
+                  ✏️ Átnevezés
+                </button>
+              )}
+            </div>
+            {currentProduct && currentProduct.isCustomName && (
+              <small className="custom-name-indicator">
+                ✓ Egyedi név használatban
+              </small>
+            )}
           </label>
           
           <label>
@@ -221,6 +286,14 @@ function NewProductModal({ onClose, onAdd }) {
           onProceed={handleCameraWarningProceed}
           onCancel={handleCameraWarningCancel}
           feature={pendingCameraAction?.feature || 'Kamera funkció'}
+        />
+      )}
+
+      {showRenameModal && currentProduct && (
+        <ProductRenameModal 
+          product={currentProduct}
+          onClose={() => setShowRenameModal(false)}
+          onRenamed={handleProductRenamed}
         />
       )}
     </div>

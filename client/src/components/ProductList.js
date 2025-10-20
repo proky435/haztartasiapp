@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import ProductListItem from './ProductListItem';
 import './ProductList.css';
 import { differenceInDays, parseISO } from 'date-fns';
+import inventoryService from '../services/inventoryService';
 
 function ProductList({ products, onUpdate, onDelete }) {
   const [locationFilter, setLocationFilter] = useState('Összes');

@@ -36,6 +36,39 @@
   box-sizing: border-box;
 }
 
+.name-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.name-input-group input {
+  flex: 1;
+}
+
+.rename-button {
+  padding: 6px 12px;
+  background-color: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.rename-button:hover {
+  background-color: #d97706;
+}
+
+.custom-name-indicator {
+  color: #059669;
+  font-style: italic;
+  margin-top: 4px;
+  display: block;
+}
+
 .button-group {
   display: flex;
   gap: 10px;
