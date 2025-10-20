@@ -5,6 +5,10 @@
 /.pnp
 .pnp.js
 
+# folders
+/ssl
+/ssl-config.conf
+
 # testing
 /coverage
 
