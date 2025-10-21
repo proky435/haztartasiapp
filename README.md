@@ -28,14 +28,42 @@ Egy modern, okos háztartási készletkezelő alkalmazás, amely segít nyomon k
 - **Valós idejű figyelmeztetések**: Lejáró termékekről azonnali értesítés
 - **Prioritásos megjelenítés**: A legfontosabb értesítések előtérben
 
+### 🍳 Intelligens Receptjavaslatok
+- **Készlet alapú keresés**: Receptek keresése a meglévő hozzávalók alapján
+- **Hiányzó hozzávalók**: Automatikus számítás és bevásárlólistához adás
+- **Szűrési lehetőségek**: Diéta, konyha típusa, elkészítési idő szerint
+- **Részletes receptek**: Hozzávalók, elkészítés, tápanyag információk
+- **Elérhetőségi pontszám**: Receptek rangsorolása a készlet alapján
+
+### 🌙 Modern UI/UX
+- **Sötét/világos téma**: Automatikus rendszer preferencia követés
+- **Reszponzív design**: Tökéletes megjelenés minden eszközön
+- **Smooth animációk**: Professzionális felhasználói élmény
+- **Intuitív navigáció**: Egyszerű és gyors használat
+
 ## 🛠️ Technológiai Stack
 
-- **Frontend**: React 18.3.1
+### Frontend
+- **React 18.3.1**: Modern komponens alapú UI
+- **CSS Variables**: Dinamikus téma rendszer
+- **Context API**: Globális állapot kezelés
+- **Responsive Design**: Mobile-first megközelítés
+
+### Integráció & API-k
+- **Spoonacular API**: Receptek és táplálkozási adatok
+- **Open Food Facts**: Termék információk
 - **Vonalkód olvasás**: Quagga.js
-- **OCR**: Tesseract.js
-- **Dátum kezelés**: date-fns
-- **API**: Open Food Facts
-- **Stílusok**: Vanilla CSS
+- **OCR**: Tesseract.js dátum felismerés
+
+### Backend & Adatbázis
+- **Node.js + Express**: RESTful API
+- **PostgreSQL**: Relációs adatbázis
+- **JWT**: Biztonságos autentikáció
+- **Bcrypt**: Jelszó titkosítás
+
+### Fejlesztői Eszközök
+- **date-fns**: Dátum manipuláció
+- **Vanilla CSS**: Tiszta, optimalizált stílusok
 
 ## 📱 Telepítés és Futtatás
 
@@ -52,6 +80,10 @@ cd haztartasiapp
 # Függőségek telepítése
 cd client
 npm install
+
+# Environment változók beállítása (opcionális)
+cp .env.example .env
+# Szerkeszd a .env fájlt és add meg a Spoonacular API kulcsod
 
 # Alkalmazás indítása
 npm start
@@ -71,6 +103,20 @@ Az alkalmazás automatikusan elérhető lesz a helyi hálózaton lévő más esz
    - Másik számítógép: `http://[IP_CÍMED]:3000`
 
 **Példa**: Ha az IP címed `192.168.1.100`, akkor az alkalmazás elérhető lesz a `http://192.168.1.100:3000` címen.
+
+### 🍳 Spoonacular API Beállítása (Receptekhez)
+
+A receptjavaslatok funkció használatához szükséges egy ingyenes Spoonacular API kulcs:
+
+1. **Regisztráció**: Látogass el a [Spoonacular API](https://spoonacular.com/food-api) oldalra
+2. **Ingyenes fiók**: Hozz létre egy ingyenes fiókot (150 kérés/nap limit)
+3. **API kulcs**: Másold ki az API kulcsot a dashboard-ról
+4. **Beállítás**: Add hozzá a `.env` fájlhoz:
+   ```
+   REACT_APP_SPOONACULAR_API_KEY=your_actual_api_key_here
+   ```
+
+**Megjegyzés**: API kulcs nélkül is működik az alkalmazás, de a receptjavaslatok funkció nem lesz elérhető.
 
 ## 🎯 Használat
 

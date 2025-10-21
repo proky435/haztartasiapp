@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import './styles/themes.css';
 import ProductList from './components/ProductList';
 import NewProductModal from './components/NewProductModal';
 import LoginPage from './components/LoginPage';
 import UserProfile from './components/UserProfile';
 import WelcomeMessage from './components/WelcomeMessage';
 import ShoppingList from './components/ShoppingList';
+import RecipesList from './components/RecipesList';
 import NotificationBanner from './components/NotificationBanner';
 import HouseholdManager from './components/HouseholdManager';
+import ThemeToggle from './components/ThemeToggle';
+import { ThemeProvider } from './contexts/ThemeContext';
 import authService from './services/authService';
 import householdsService from './services/householdsService';
 import inventoryService from './services/inventoryService';
@@ -20,7 +24,7 @@ function App() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showHouseholdManager, setShowHouseholdManager] = useState(false);
-  const [currentView, setCurrentView] = useState('inventory'); // 'inventory' vagy 'shopping'
+  const [currentView, setCurrentView] = useState('inventory'); // 'inventory', 'shopping', 'recipes'
   const [isLoading, setIsLoading] = useState(true);
   const [shoppingItems, setShoppingItems] = useState([]);
   const [products, setProducts] = useState([]);
@@ -301,11 +305,16 @@ function App() {
 
   // Login oldal
   if (!user) {
-    return <LoginPage onLogin={handleLogin} />;
+    return (
+      <ThemeProvider>
+        <LoginPage onLogin={handleLogin} />
+      </ThemeProvider>
+    );
   }
 
   return (
-    <div className="App">
+    <ThemeProvider>
+      <div className="App">
       <NotificationBanner products={products} />
       <header className="App-header">
         <div className="header-left">
@@ -355,6 +364,12 @@ function App() {
             >
               🛒 Bevásárlás ({shoppingItems.filter(item => !item.purchased).length})
             </button>
+            <button 
+              className={`nav-button ${currentView === 'recipes' ? 'active' : ''}`}
+              onClick={() => setCurrentView('recipes')}
+            >
+              🍳 Receptek
+            </button>
           </nav>
         </div>
         
@@ -364,6 +379,8 @@ function App() {
               + Új Termék
             </button>
           )}
+          
+          <ThemeToggle />
           
           <div className="user-menu">
             <button 
@@ -402,9 +419,13 @@ function App() {
               onDelete={handleDeleteProduct}
             />
           )
-        ) : (
+        ) : currentView === 'shopping' ? (
           <ShoppingList 
             onItemsChange={(items) => setShoppingItems(items)}
+            currentHousehold={currentHousehold}
+          />
+        ) : (
+          <RecipesList 
             currentHousehold={currentHousehold}
           />
         )}
@@ -433,6 +454,7 @@ function App() {
         />
       )}
     </div>
+    </ThemeProvider>
   );
 }
 

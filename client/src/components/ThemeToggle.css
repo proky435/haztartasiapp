@@ -1,0 +1,151 @@
+.theme-toggle-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.theme-toggle-button,
+.theme-options-button {
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
+}
+
+.theme-toggle-button:hover,
+.theme-options-button:hover {
+  background: var(--surface-hover-color);
+  border-color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.theme-icon,
+.options-icon {
+  font-size: 1.2rem;
+  transition: transform 0.2s ease;
+}
+
+.theme-toggle-button:hover .theme-icon,
+.theme-options-button:hover .options-icon {
+  transform: scale(1.1);
+}
+
+/* Dropdown */
+.theme-options-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px var(--shadow-color);
+  min-width: 200px;
+  z-index: 1000;
+  overflow: hidden;
+  animation: dropdownFadeIn 0.2s ease;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.theme-options-header {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--surface-secondary-color);
+}
+
+.theme-options-header h4 {
+  margin: 0;
+  color: var(--text-primary-color);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.theme-options-list {
+  padding: 0.5rem;
+}
+
+.theme-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-primary-color);
+  font-size: 0.9rem;
+}
+
+.theme-option:hover {
+  background: var(--surface-hover-color);
+  transform: translateX(4px);
+}
+
+.theme-option.active {
+  background: var(--primary-color-alpha);
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.option-icon {
+  font-size: 1.1rem;
+  width: 20px;
+  text-align: center;
+}
+
+.option-text {
+  flex: 1;
+  text-align: left;
+}
+
+.check-mark {
+  color: var(--success-color);
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .theme-toggle-container {
+    gap: 0.25rem;
+  }
+  
+  .theme-toggle-button,
+  .theme-options-button {
+    min-width: 36px;
+    height: 36px;
+    padding: 0.4rem;
+  }
+  
+  .theme-options-dropdown {
+    right: -50px;
+    min-width: 180px;
+  }
+  
+  .theme-option {
+    padding: 0.6rem;
+    font-size: 0.85rem;
+  }
+}

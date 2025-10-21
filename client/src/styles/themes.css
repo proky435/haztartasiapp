@@ -1,0 +1,225 @@
+/* ===== GLOBÁLIS TÉMA VÁLTOZÓK ===== */
+
+/* Alapértelmezett (Világos) Téma */
+:root {
+  /* Színpaletta */
+  --primary-color: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-light: #dbeafe;
+  --primary-color-alpha: rgba(59, 130, 246, 0.1);
+  
+  --secondary-color: #64748b;
+  --secondary-hover: #475569;
+  --secondary-light: #f1f5f9;
+  
+  --success-color: #10b981;
+  --success-light: #d1fae5;
+  --warning-color: #f59e0b;
+  --warning-light: #fef3c7;
+  --error-color: #ef4444;
+  --error-light: #fee2e2;
+  --info-color: #06b6d4;
+  --info-light: #cffafe;
+  
+  /* Háttér színek */
+  --background-color: #ffffff;
+  --background-secondary: #f8fafc;
+  --background-tertiary: #f1f5f9;
+  
+  /* Felület színek */
+  --surface-color: #ffffff;
+  --surface-secondary-color: #f8fafc;
+  --surface-hover-color: #f1f5f9;
+  --surface-active-color: #e2e8f0;
+  
+  /* Szöveg színek */
+  --text-primary-color: #1e293b;
+  --text-secondary-color: #64748b;
+  --text-tertiary-color: #94a3b8;
+  --text-inverse-color: #ffffff;
+  
+  /* Keret és elválasztó */
+  --border-color: #e2e8f0;
+  --border-hover-color: #cbd5e1;
+  --border-focus-color: var(--primary-color);
+  --divider-color: #f1f5f9;
+  
+  /* Árnyékok */
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --shadow-hover-color: rgba(0, 0, 0, 0.15);
+  --shadow-focus-color: rgba(59, 130, 246, 0.25);
+  
+  /* Átlátszóság szintek */
+  --overlay-color: rgba(0, 0, 0, 0.5);
+  --backdrop-color: rgba(255, 255, 255, 0.8);
+  
+  /* Gradientek */
+  --gradient-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  --gradient-surface: linear-gradient(135deg, var(--surface-color) 0%, var(--surface-secondary-color) 100%);
+  
+  /* Animációk */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow: 0.3s ease;
+  
+  /* Méret változók */
+  --border-radius-sm: 6px;
+  --border-radius: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 16px;
+  
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+}
+
+/* Sötét Téma */
+[data-theme="dark"] {
+  /* Színpaletta - sötét verzió */
+  --primary-color: #60a5fa;
+  --primary-hover: #3b82f6;
+  --primary-light: #1e3a8a;
+  --primary-color-alpha: rgba(96, 165, 250, 0.15);
+  
+  --secondary-color: #94a3b8;
+  --secondary-hover: #cbd5e1;
+  --secondary-light: #334155;
+  
+  --success-color: #34d399;
+  --success-light: #064e3b;
+  --warning-color: #fbbf24;
+  --warning-light: #451a03;
+  --error-color: #f87171;
+  --error-light: #450a0a;
+  --info-color: #22d3ee;
+  --info-light: #083344;
+  
+  /* Háttér színek - sötét */
+  --background-color: #0f172a;
+  --background-secondary: #1e293b;
+  --background-tertiary: #334155;
+  
+  /* Felület színek - sötét */
+  --surface-color: #1e293b;
+  --surface-secondary-color: #334155;
+  --surface-hover-color: #475569;
+  --surface-active-color: #64748b;
+  
+  /* Szöveg színek - sötét */
+  --text-primary-color: #f8fafc;
+  --text-secondary-color: #cbd5e1;
+  --text-tertiary-color: #94a3b8;
+  --text-inverse-color: #1e293b;
+  
+  /* Keret és elválasztó - sötét */
+  --border-color: #334155;
+  --border-hover-color: #475569;
+  --border-focus-color: var(--primary-color);
+  --divider-color: #334155;
+  
+  /* Árnyékok - sötét */
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --shadow-hover-color: rgba(0, 0, 0, 0.4);
+  --shadow-focus-color: rgba(96, 165, 250, 0.3);
+  
+  /* Átlátszóság szintek - sötét */
+  --overlay-color: rgba(0, 0, 0, 0.7);
+  --backdrop-color: rgba(15, 23, 42, 0.8);
+  
+  /* Gradientek - sötét */
+  --gradient-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  --gradient-surface: linear-gradient(135deg, var(--surface-color) 0%, var(--surface-secondary-color) 100%);
+}
+
+/* Speciális állapotok */
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* Automatikus rendszer téma preferencia */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --primary-color: #60a5fa;
+    --primary-hover: #3b82f6;
+    --primary-light: #1e3a8a;
+    --primary-color-alpha: rgba(96, 165, 250, 0.15);
+    
+    --background-color: #0f172a;
+    --background-secondary: #1e293b;
+    --background-tertiary: #334155;
+    
+    --surface-color: #1e293b;
+    --surface-secondary-color: #334155;
+    --surface-hover-color: #475569;
+    --surface-active-color: #64748b;
+    
+    --text-primary-color: #f8fafc;
+    --text-secondary-color: #cbd5e1;
+    --text-tertiary-color: #94a3b8;
+    --text-inverse-color: #1e293b;
+    
+    --border-color: #334155;
+    --border-hover-color: #475569;
+    --divider-color: #334155;
+    
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --shadow-hover-color: rgba(0, 0, 0, 0.4);
+    --shadow-focus-color: rgba(96, 165, 250, 0.3);
+    
+    --overlay-color: rgba(0, 0, 0, 0.7);
+    --backdrop-color: rgba(15, 23, 42, 0.8);
+    
+    color-scheme: dark;
+  }
+}
+
+/* Globális alapok */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--background-color);
+  color: var(--text-primary-color);
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  line-height: 1.6;
+}
+
+/* Scrollbar testreszabás */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface-color);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover-color);
+}
+
+/* Selection színek */
+::selection {
+  background: var(--primary-color-alpha);
+  color: var(--text-primary-color);
+}
+
+/* Focus outline */
+:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
