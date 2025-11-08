@@ -4,7 +4,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: var(--overlay-color);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -12,25 +12,28 @@
 }
 
 .date-ocr-container {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
+  background: var(--surface-color);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
   max-width: 90%;
   max-height: 90%;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 20px 60px var(--shadow-color);
+  color: var(--text-primary-color);
 }
 
 .ocr-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: var(--spacing-lg);
 }
 
 .ocr-header h3 {
   margin: 0;
-  color: #333;
+  color: var(--text-primary-color);
+  font-weight: 600;
 }
 
 .close-button {
@@ -38,17 +41,20 @@
   border: none;
   font-size: 24px;
   cursor: pointer;
-  color: #666;
+  color: var(--text-secondary-color);
   padding: 0;
   width: 30px;
   height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: var(--border-radius);
+  transition: all var(--transition-normal);
 }
 
 .close-button:hover {
-  color: #333;
+  color: var(--text-primary-color);
+  background: var(--surface-hover-color);
 }
 
 .ocr-content {
@@ -60,10 +66,11 @@
 .camera-container {
   width: 100%;
   max-width: 500px;
-  border: 2px solid #ddd;
-  border-radius: 8px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
   overflow: hidden;
-  margin-bottom: 20px;
+  margin-bottom: var(--spacing-lg);
+  background: var(--surface-secondary-color);
 }
 
 .camera-video {
@@ -73,45 +80,49 @@
 }
 
 .ocr-controls {
-  margin-bottom: 20px;
+  margin-bottom: var(--spacing-lg);
 }
 
 .scan-button {
-  background-color: #007bff;
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--text-inverse-color);
   border: none;
-  padding: 12px 24px;
-  border-radius: 6px;
-  font-size: 16px;
+  padding: var(--spacing-sm) var(--spacing-xl);
+  border-radius: var(--border-radius-sm);
+  font-size: 1rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all var(--transition-normal);
 }
 
 .scan-button:hover:not(:disabled) {
-  background-color: #0056b3;
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
 }
 
 .scan-button:disabled {
-  background-color: #6c757d;
+  background-color: var(--border-color);
   cursor: not-allowed;
+  transform: none;
 }
 
 .detected-text {
   max-width: 500px;
-  padding: 15px;
-  background-color: #f8f9fa;
-  border-radius: 6px;
-  border: 1px solid #dee2e6;
+  padding: var(--spacing);
+  background-color: var(--surface-secondary-color);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-color);
 }
 
 .detected-text h4 {
-  margin: 0 0 10px 0;
-  color: #495057;
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--text-primary-color);
+  font-weight: 600;
 }
 
 .detected-text p {
   margin: 0;
-  color: #6c757d;
+  color: var(--text-secondary-color);
   font-family: monospace;
   white-space: pre-wrap;
   word-break: break-word;
@@ -119,29 +130,31 @@
 
 .ocr-error {
   text-align: center;
-  padding: 20px;
+  padding: var(--spacing-lg);
   max-width: 500px;
 }
 
 .ocr-error p {
-  color: #dc3545;
-  font-size: 16px;
-  margin-bottom: 20px;
+  color: var(--error-color);
+  font-size: 1rem;
+  margin-bottom: var(--spacing-lg);
 }
 
 .retry-button {
-  background-color: #28a745;
-  color: white;
+  background-color: var(--success-color);
+  color: var(--text-inverse-color);
   border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 14px;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all var(--transition-normal);
 }
 
 .retry-button:hover {
-  background-color: #218838;
+  background-color: var(--success-hover);
+  transform: translateY(-1px);
 }
 
 .loading-container {

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import ProductListItem from './ProductListItem';
+import ConfirmationModal from './ConfirmationModal';
 import './ProductList.css';
 import { differenceInDays, parseISO } from 'date-fns';
 import inventoryService from '../services/inventoryService';
@@ -7,6 +8,7 @@ import inventoryService from '../services/inventoryService';
 function ProductList({ products, onUpdate, onDelete }) {
   const [locationFilter, setLocationFilter] = useState('Összes');
   const [sortBy, setSortBy] = useState('expiry');
+  const [deleteConfirmation, setDeleteConfirmation] = useState({ isOpen: false, product: null });
 
   const sortedAndFilteredProducts = useMemo(() => {
     let filtered = products;
@@ -34,6 +36,24 @@ function ProductList({ products, onUpdate, onDelete }) {
 
     return sorted;
   }, [products, locationFilter, sortBy]);
+
+  const uniqueLocations = [...new Set(products.map(p => p.location))].filter(Boolean);
+
+  // Törlés megerősítés kezelése
+  const handleDeleteClick = (product) => {
+    setDeleteConfirmation({ isOpen: true, product });
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteConfirmation.product && onDelete) {
+      onDelete(deleteConfirmation.product.id);
+    }
+    setDeleteConfirmation({ isOpen: false, product: null });
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirmation({ isOpen: false, product: null });
+  };
 
   const locations = ['Összes', 'Hűtő', 'Fagyasztó', 'Kamra', 'Egyéb'];
 
@@ -73,11 +93,26 @@ function ProductList({ products, onUpdate, onDelete }) {
               key={product.id} 
               product={product} 
               onUpdate={onUpdate}
-              onDelete={onDelete}
+              onDelete={handleDeleteClick}
             />
           ))
         )}
       </div>
+
+      <ConfirmationModal
+        isOpen={deleteConfirmation.isOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Termék törlése"
+        message={
+          deleteConfirmation.product 
+            ? `Biztosan törölni szeretnéd a "${deleteConfirmation.product.name}" terméket a készletből?`
+            : ''
+        }
+        confirmText="Törlés"
+        cancelText="Mégse"
+        type="danger"
+      />
     </div>
   );
 }

@@ -13,12 +13,16 @@
   --secondary-light: #f1f5f9;
   
   --success-color: #10b981;
+  --success-hover: #059669;
   --success-light: #d1fae5;
   --warning-color: #f59e0b;
+  --warning-hover: #d97706;
   --warning-light: #fef3c7;
   --error-color: #ef4444;
+  --error-hover: #dc2626;
   --error-light: #fee2e2;
   --info-color: #06b6d4;
+  --info-hover: #0891b2;
   --info-light: #cffafe;
   
   /* Háttér színek */
@@ -36,6 +40,7 @@
   --text-primary-color: #1e293b;
   --text-secondary-color: #64748b;
   --text-tertiary-color: #94a3b8;
+  --text-muted-color: #9ca3af;
   --text-inverse-color: #ffffff;
   
   /* Keret és elválasztó */
@@ -74,6 +79,10 @@
   --spacing-lg: 1.5rem;
   --spacing-xl: 2rem;
   --spacing-2xl: 3rem;
+  
+  /* Touch target minimumok mobil eszközökön */
+  --touch-target-min: 44px;
+  --touch-target-comfortable: 48px;
 }
 
 /* Sötét Téma */
@@ -89,12 +98,16 @@
   --secondary-light: #334155;
   
   --success-color: #34d399;
+  --success-hover: #10b981;
   --success-light: #064e3b;
   --warning-color: #fbbf24;
+  --warning-hover: #f59e0b;
   --warning-light: #451a03;
   --error-color: #f87171;
+  --error-hover: #ef4444;
   --error-light: #450a0a;
   --info-color: #22d3ee;
+  --info-hover: #06b6d4;
   --info-light: #083344;
   
   /* Háttér színek - sötét */
@@ -112,6 +125,7 @@
   --text-primary-color: #f8fafc;
   --text-secondary-color: #cbd5e1;
   --text-tertiary-color: #94a3b8;
+  --text-muted-color: #6b7280;
   --text-inverse-color: #1e293b;
   
   /* Keret és elválasztó - sötét */
@@ -151,6 +165,15 @@
     --primary-light: #1e3a8a;
     --primary-color-alpha: rgba(96, 165, 250, 0.15);
     
+    --success-color: #34d399;
+    --success-hover: #10b981;
+    --warning-color: #fbbf24;
+    --warning-hover: #f59e0b;
+    --error-color: #f87171;
+    --error-hover: #ef4444;
+    --info-color: #22d3ee;
+    --info-hover: #06b6d4;
+    
     --background-color: #0f172a;
     --background-secondary: #1e293b;
     --background-tertiary: #334155;
@@ -163,6 +186,7 @@
     --text-primary-color: #f8fafc;
     --text-secondary-color: #cbd5e1;
     --text-tertiary-color: #94a3b8;
+    --text-muted-color: #6b7280;
     --text-inverse-color: #1e293b;
     
     --border-color: #334155;

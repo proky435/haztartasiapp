@@ -1,0 +1,127 @@
+/* ULTIMATE DARK THEME FIXES - NUCLEAR OPTION */
+
+/* Force all product list items to have dark backgrounds in dark theme */
+[data-theme="dark"] .product-list-item,
+[data-theme="dark"] .product-list-item *,
+html[data-theme="dark"] .product-list-item,
+html[data-theme="dark"] .product-list-item *,
+body[data-theme="dark"] .product-list-item,
+body[data-theme="dark"] .product-list-item *,
+.theme-dark .product-list-item,
+.theme-dark .product-list-item *,
+.product-list-item.theme-dark,
+.product-list-item.theme-dark * {
+  background: #1e293b !important;
+  background-color: #1e293b !important;
+}
+
+/* Expired/expiring items */
+[data-theme="dark"] .product-list-item.expired,
+[data-theme="dark"] .product-list-item.expires-today,
+[data-theme="dark"] .product-list-item.expires-soon,
+html[data-theme="dark"] .product-list-item.expired,
+html[data-theme="dark"] .product-list-item.expires-today,
+html[data-theme="dark"] .product-list-item.expires-soon,
+body[data-theme="dark"] .product-list-item.expired,
+body[data-theme="dark"] .product-list-item.expires-today,
+body[data-theme="dark"] .product-list-item.expires-soon,
+.theme-dark .product-list-item.expired,
+.theme-dark .product-list-item.expires-today,
+.theme-dark .product-list-item.expires-soon,
+.product-list-item.theme-dark.expired,
+.product-list-item.theme-dark.expires-today,
+.product-list-item.theme-dark.expires-soon {
+  background: #334155 !important;
+  background-color: #334155 !important;
+}
+
+/* Override any inline styles that might set white backgrounds */
+[data-theme="dark"] [style*="background: white"],
+[data-theme="dark"] [style*="background-color: white"],
+[data-theme="dark"] [style*="background: #ffffff"],
+[data-theme="dark"] [style*="background-color: #ffffff"],
+[data-theme="dark"] [style*="background: #fff"],
+[data-theme="dark"] [style*="background-color: #fff"] {
+  background: #1e293b !important;
+  background-color: #1e293b !important;
+}
+
+/* Specific overrides for product list items with inline styles */
+[data-theme="dark"] .product-list-item[style*="background"],
+[data-theme="dark"] .product-list-item[style*="background-color"] {
+  background: #1e293b !important;
+  background-color: #1e293b !important;
+}
+
+[data-theme="dark"] .product-list-item.expired[style*="background"],
+[data-theme="dark"] .product-list-item.expires-today[style*="background"],
+[data-theme="dark"] .product-list-item.expires-soon[style*="background"],
+[data-theme="dark"] .product-list-item.expired[style*="background-color"],
+[data-theme="dark"] .product-list-item.expires-today[style*="background-color"],
+[data-theme="dark"] .product-list-item.expires-soon[style*="background-color"] {
+  background: #334155 !important;
+  background-color: #334155 !important;
+}
+
+/* Force all children elements to inherit the background - EXCEPT buttons */
+[data-theme="dark"] .product-list-item > *:not(.quantity-controls):not(.delete-button),
+[data-theme="dark"] .product-list-item > * > *:not(button):not(.quantity-controls):not(.delete-button),
+[data-theme="dark"] .product-list-item > * > * > *:not(button):not(.quantity-controls):not(.delete-button) {
+  background: inherit !important;
+  background-color: inherit !important;
+}
+
+/* Ensure buttons keep their proper colors in dark theme */
+[data-theme="dark"] .product-list-item .quantity-controls button {
+  background: var(--primary-color) !important;
+  background-color: var(--primary-color) !important;
+  color: var(--text-inverse-color) !important;
+}
+
+[data-theme="dark"] .product-list-item .quantity-controls button:hover {
+  background: var(--primary-hover) !important;
+  background-color: var(--primary-hover) !important;
+}
+
+[data-theme="dark"] .product-list-item .delete-button {
+  background: var(--error-color) !important;
+  background-color: var(--error-color) !important;
+  color: var(--text-inverse-color) !important;
+}
+
+[data-theme="dark"] .product-list-item .delete-button:hover {
+  background: var(--error-hover) !important;
+  background-color: var(--error-hover) !important;
+}
+
+/* Light theme fixes - ensure proper colors */
+[data-theme="light"] .product-list-item,
+:root:not([data-theme]) .product-list-item {
+  background: var(--surface-color) !important;
+  background-color: var(--surface-color) !important;
+}
+
+[data-theme="light"] .product-list-item.expired,
+[data-theme="light"] .product-list-item.expires-today,
+[data-theme="light"] .product-list-item.expires-soon,
+:root:not([data-theme]) .product-list-item.expired,
+:root:not([data-theme]) .product-list-item.expires-today,
+:root:not([data-theme]) .product-list-item.expires-soon {
+  background: var(--surface-secondary-color) !important;
+  background-color: var(--surface-secondary-color) !important;
+}
+
+/* Ensure buttons work properly in light theme too */
+[data-theme="light"] .product-list-item .quantity-controls button,
+:root:not([data-theme]) .product-list-item .quantity-controls button {
+  background: var(--primary-color) !important;
+  background-color: var(--primary-color) !important;
+  color: var(--text-inverse-color) !important;
+}
+
+[data-theme="light"] .product-list-item .delete-button,
+:root:not([data-theme]) .product-list-item .delete-button {
+  background: var(--error-color) !important;
+  background-color: var(--error-color) !important;
+  color: var(--text-inverse-color) !important;
+}

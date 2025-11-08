@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import './styles/themes.css';
+import './styles/dark-theme-fixes.css';
 import ProductList from './components/ProductList';
 import NewProductModal from './components/NewProductModal';
 import LoginPage from './components/LoginPage';
@@ -12,11 +13,15 @@ import NotificationBanner from './components/NotificationBanner';
 import HouseholdManager from './components/HouseholdManager';
 import ThemeToggle from './components/ThemeToggle';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { useDarkThemeForce } from './hooks/useDarkThemeForce';
 import authService from './services/authService';
 import householdsService from './services/householdsService';
 import inventoryService from './services/inventoryService';
 
-function App() {
+function AppContent() {
+  // Use the dark theme force hook
+  useDarkThemeForce();
+  
   const [user, setUser] = useState(null);
   const [currentHousehold, setCurrentHousehold] = useState(null);
   const [households, setHouseholds] = useState([]);
@@ -305,16 +310,11 @@ function App() {
 
   // Login oldal
   if (!user) {
-    return (
-      <ThemeProvider>
-        <LoginPage onLogin={handleLogin} />
-      </ThemeProvider>
-    );
+    return <LoginPage onLogin={handleLogin} />;
   }
 
   return (
-    <ThemeProvider>
-      <div className="App">
+    <div className="App">
       <NotificationBanner products={products} />
       <header className="App-header">
         <div className="header-left">
@@ -454,6 +454,13 @@ function App() {
         />
       )}
     </div>
+  );
+}
+
+function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
     </ThemeProvider>
   );
 }

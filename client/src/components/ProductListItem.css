@@ -2,27 +2,128 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px;
-  border: 1px solid #ccc;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  background-color: white;
-  transition: all 0.2s ease;
+  padding: var(--spacing);
+  border: 1px solid var(--border-color);
+  margin-bottom: var(--spacing-sm);
+  border-radius: var(--border-radius);
+  background-color: var(--surface-color) !important;
+  background: var(--surface-color) !important;
+  color: var(--text-primary-color);
+  transition: all var(--transition-normal);
+}
+
+.product-list-item:hover {
+  background-color: var(--surface-hover-color);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--shadow-color);
 }
 
 .product-list-item.expired {
-  border-left: 4px solid #dc3545;
-  background-color: #fff5f5;
+  border-left: 4px solid var(--error-color);
+  background-color: var(--surface-secondary-color) !important;
+  border-color: var(--error-color);
 }
 
 .product-list-item.expires-today {
-  border-left: 4px solid #fd7e14;
-  background-color: #fff8f0;
+  border-left: 4px solid var(--warning-color);
+  background-color: var(--surface-secondary-color) !important;
+  border-color: var(--warning-color);
 }
 
 .product-list-item.expires-soon {
-  border-left: 4px solid #ffc107;
-  background-color: #fffbf0;
+  border-left: 4px solid var(--warning-color);
+  background-color: var(--surface-secondary-color) !important;
+  border-color: var(--warning-color);
+}
+
+.product-list-item.expired:hover,
+.product-list-item.expires-today:hover,
+.product-list-item.expires-soon:hover {
+  background-color: var(--surface-hover-color) !important;
+}
+
+/* Erős CSS override minden állapotra - v2 */
+div.product-list-item {
+  background: var(--surface-color) !important;
+  background-color: var(--surface-color) !important;
+}
+
+div.product-list-item.expired {
+  background: var(--surface-secondary-color) !important;
+  background-color: var(--surface-secondary-color) !important;
+}
+
+div.product-list-item.expires-today,
+div.product-list-item.expires-soon {
+  background: var(--surface-secondary-color) !important;
+  background-color: var(--surface-secondary-color) !important;
+}
+
+/* Még erősebb override */
+.products-grid .product-list-item {
+  background: var(--surface-color) !important;
+  background-color: var(--surface-color) !important;
+}
+
+.products-grid .product-list-item.expired {
+  background: var(--surface-secondary-color) !important;
+  background-color: var(--surface-secondary-color) !important;
+}
+
+.products-grid .product-list-item.expires-today,
+.products-grid .product-list-item.expires-soon {
+  background: var(--surface-secondary-color) !important;
+  background-color: var(--surface-secondary-color) !important;
+}
+
+
+/* Téma-specifikus osztályok - LEGERŐSEBB OVERRIDE */
+div.product-list-item.theme-dark,
+.products-grid div.product-list-item.theme-dark,
+.product-list-container .products-grid div.product-list-item.theme-dark {
+  background: #1e293b !important;
+  background-color: #1e293b !important;
+}
+
+div.product-list-item.theme-light,
+.products-grid div.product-list-item.theme-light,
+.product-list-container .products-grid div.product-list-item.theme-light {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+div.product-list-item.theme-dark.expired,
+.products-grid div.product-list-item.theme-dark.expired,
+.product-list-container .products-grid div.product-list-item.theme-dark.expired {
+  background: #334155 !important;
+  background-color: #334155 !important;
+}
+
+div.product-list-item.theme-dark.expires-today,
+div.product-list-item.theme-dark.expires-soon,
+.products-grid div.product-list-item.theme-dark.expires-today,
+.products-grid div.product-list-item.theme-dark.expires-soon,
+.product-list-container .products-grid div.product-list-item.theme-dark.expires-today,
+.product-list-container .products-grid div.product-list-item.theme-dark.expires-soon {
+  background: #334155 !important;
+  background-color: #334155 !important;
+}
+
+div.product-list-item.theme-light.expired,
+.products-grid div.product-list-item.theme-light.expired,
+.product-list-container .products-grid div.product-list-item.theme-light.expired {
+  background: #f8fafc !important;
+  background-color: #f8fafc !important;
+}
+
+div.product-list-item.theme-light.expires-today,
+div.product-list-item.theme-light.expires-soon,
+.products-grid div.product-list-item.theme-light.expires-today,
+.products-grid div.product-list-item.theme-light.expires-soon,
+.product-list-container .products-grid div.product-list-item.theme-light.expires-today,
+.product-list-container .products-grid div.product-list-item.theme-light.expires-soon {
+  background: #f8fafc !important;
+  background-color: #f8fafc !important;
 }
 
 .product-info {
@@ -32,106 +133,267 @@
 }
 
 .product-name {
-  font-weight: bold;
-  font-size: 16px;
-  margin-bottom: 5px;
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-primary-color);
 }
 
 .product-details {
   display: flex;
-  gap: 15px;
-  font-size: 14px;
+  gap: var(--spacing);
+  font-size: 0.875rem;
 }
 
 .product-location {
-  color: #6c757d;
-  background-color: #f8f9fa;
-  padding: 2px 8px;
-  border-radius: 12px;
+  color: var(--text-secondary-color);
+  background-color: var(--surface-secondary-color);
+  padding: var(--spacing-xs) var(--spacing-xs);
+  border-radius: var(--border-radius-xl);
   font-size: 12px;
 }
 
 .expiry-date {
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 12px;
+  padding: var(--spacing-xs) var(--spacing-xs);
+  border-radius: var(--border-radius-xl);
+  font-size: 0.75rem;
   font-weight: 500;
 }
 
 .expiry-date.expired {
-  background-color: #dc3545;
-  color: white;
+  background-color: var(--error-color);
+  color: var(--text-inverse-color);
 }
 
 .expiry-date.expires-today {
-  background-color: #fd7e14;
-  color: white;
+  background-color: var(--warning-color);
+  color: var(--text-inverse-color);
 }
 
 .expiry-date.expires-soon {
-  background-color: #ffc107;
-  color: #212529;
+  background-color: var(--warning-color);
+  color: var(--text-primary-color);
 }
 
 .expiry-date.expires-ok {
-  background-color: #28a745;
-  color: white;
+  background-color: var(--success-color);
+  color: var(--text-inverse-color);
 }
 
 .quantity-controls {
   display: flex;
   align-items: center;
-  margin: 0 15px;
+  margin: 0 var(--spacing);
+  gap: var(--spacing-xs);
 }
 
 .quantity-controls button {
-  background-color: #007bff;
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--text-inverse-color);
   border: none;
-  padding: 8px 12px;
-  margin: 0 5px;
+  padding: var(--spacing-xs) var(--spacing-sm);
   cursor: pointer;
-  border-radius: 4px;
-  font-size: 14px;
+  border-radius: var(--border-radius-sm);
+  font-size: 0.875rem;
   min-width: 35px;
+  transition: all var(--transition-normal);
 }
 
 .quantity-controls button:hover {
-  background-color: #0056b3;
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
 }
 
 .product-quantity {
-  font-weight: bold;
-  margin: 0 10px;
+  font-weight: 600;
+  margin: 0 var(--spacing-sm);
   min-width: 30px;
   text-align: center;
+  color: var(--text-primary-color);
 }
 
 .delete-button {
-  background-color: #dc3545;
-  color: white;
+  background-color: var(--error-color);
+  color: var(--text-inverse-color);
   border: none;
-  padding: 8px 15px;
+  padding: var(--spacing-xs) var(--spacing);
   cursor: pointer;
-  border-radius: 4px;
-  font-size: 14px;
+  border-radius: var(--border-radius-sm);
+  font-size: 0.875rem;
+  transition: all var(--transition-normal);
 }
 
 .delete-button:hover {
-  background-color: #c82333;
+  background-color: var(--error-hover);
+  transform: translateY(-1px);
 }
 
+/* Tablet responsive */
 @media (max-width: 768px) {
   .product-list-item {
+    padding: var(--spacing-sm);
+    gap: var(--spacing-sm);
+  }
+  
+  .product-info {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .product-name {
+    font-size: 1rem;
+  }
+  
+  .quantity-controls {
+    flex-shrink: 0;
+  }
+  
+  .quantity-controls button {
+    min-width: 36px;
+    min-height: 36px;
+  }
+  
+  .delete-button {
+    min-width: 80px;
+    min-height: 36px;
+    font-size: 0.875rem;
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+  .product-list-item {
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--spacing);
+    gap: var(--spacing-sm);
+  }
+  
+  .product-info {
+    width: 100%;
+  }
+  
+  .product-details {
+    margin-top: var(--spacing-xs);
     flex-direction: column;
     align-items: flex-start;
+    gap: var(--spacing-xs);
   }
-
+  
+  .product-location {
+    font-size: 0.875rem;
+  }
+  
+  .expiry-date {
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+  
   .quantity-controls {
-    margin-top: 10px;
+    align-self: center;
+    margin-top: var(--spacing-sm);
   }
-
+  
+  .quantity-controls button {
+    min-width: 44px; /* Touch target minimum */
+    min-height: 44px;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+  
+  .product-quantity {
+    min-width: 60px;
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+  
   .delete-button {
-    margin-top: 10px;
+    width: 100%;
+    min-height: 44px;
+    font-size: 1rem;
+    margin-top: var(--spacing-sm);
+    justify-content: center;
   }
+}
+
+/* ULTIMATE OVERRIDE - Ensure dark theme always works */
+[data-theme="dark"] .product-list-item,
+[data-theme="dark"] div.product-list-item,
+body[data-theme="dark"] .product-list-item,
+html[data-theme="dark"] .product-list-item {
+  background: #1e293b !important;
+  background-color: #1e293b !important;
+}
+
+[data-theme="dark"] .product-list-item.expired,
+[data-theme="dark"] div.product-list-item.expired,
+body[data-theme="dark"] .product-list-item.expired,
+html[data-theme="dark"] .product-list-item.expired {
+  background: #334155 !important;
+  background-color: #334155 !important;
+}
+
+[data-theme="dark"] .product-list-item.expires-today,
+[data-theme="dark"] .product-list-item.expires-soon,
+[data-theme="dark"] div.product-list-item.expires-today,
+[data-theme="dark"] div.product-list-item.expires-soon,
+body[data-theme="dark"] .product-list-item.expires-today,
+body[data-theme="dark"] .product-list-item.expires-soon,
+html[data-theme="dark"] .product-list-item.expires-today,
+html[data-theme="dark"] .product-list-item.expires-soon {
+  background: #334155 !important;
+  background-color: #334155 !important;
+}
+
+/* NUCLEAR OPTION - Minden lehetséges szelektorra */
+* [data-theme="dark"] .product-list-item,
+*[data-theme="dark"] .product-list-item,
+[data-theme="dark"] * .product-list-item,
+.product-list-item[data-theme="dark"],
+.theme-dark.product-list-item,
+.product-list-item.theme-dark {
+  background: #1e293b !important;
+  background-color: #1e293b !important;
+}
+
+* [data-theme="dark"] .product-list-item.expired,
+*[data-theme="dark"] .product-list-item.expired,
+[data-theme="dark"] * .product-list-item.expired,
+.product-list-item.expired[data-theme="dark"],
+.theme-dark.product-list-item.expired,
+.product-list-item.theme-dark.expired {
+  background: #334155 !important;
+  background-color: #334155 !important;
+}
+
+* [data-theme="dark"] .product-list-item.expires-today,
+* [data-theme="dark"] .product-list-item.expires-soon,
+*[data-theme="dark"] .product-list-item.expires-today,
+*[data-theme="dark"] .product-list-item.expires-soon,
+[data-theme="dark"] * .product-list-item.expires-today,
+[data-theme="dark"] * .product-list-item.expires-soon,
+.product-list-item.expires-today[data-theme="dark"],
+.product-list-item.expires-soon[data-theme="dark"],
+.theme-dark.product-list-item.expires-today,
+.theme-dark.product-list-item.expires-soon,
+.product-list-item.theme-dark.expires-today,
+.product-list-item.theme-dark.expires-soon {
+  background: #334155 !important;
+  background-color: #334155 !important;
+}
+
+/* Specific overrides for white backgrounds */
+[data-theme="dark"] [style*="background-color: #ffffff"],
+[data-theme="dark"] [style*="background-color: white"],
+[data-theme="dark"] [style*="background: #ffffff"],
+[data-theme="dark"] [style*="background: white"] {
+  background: #1e293b !important;
+  background-color: #1e293b !important;
+}
+
+/* Force all product list items to use dark backgrounds */
+[data-theme="dark"] .product-list-item,
+[data-theme="dark"] .product-list-item:not(.expired):not(.expires-today):not(.expires-soon) {
+  background: #1e293b !important;
+  background-color: #1e293b !important;
 }

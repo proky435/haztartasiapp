@@ -1439,4 +1439,83 @@ router.get('/:householdId/shopping-lists/:listId/items', authenticateToken, asyn
   }
 });
 
+/**
+ * DELETE /api/v1/households/:householdId/shopping-lists/:listId/items/:itemId
+ * Tétel törlése háztartás bevásárlólistájáról
+ */
+router.delete('/:householdId/shopping-lists/:listId/items/:itemId', [
+  authenticateToken,
+  param('householdId').isUUID().withMessage('Érvénytelen háztartás azonosító'),
+  param('listId').isUUID().withMessage('Érvénytelen lista azonosító'),
+  param('itemId').isUUID().withMessage('Érvénytelen tétel azonosító')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        error: 'Validációs hiba',
+        details: errors.array()
+      });
+    }
+
+    const { householdId, listId, itemId } = req.params;
+
+    // Ellenőrizzük, hogy a felhasználó tagja-e a háztartásnak
+    const memberCheck = await query(`
+      SELECT role FROM household_members 
+      WHERE household_id = $1 AND user_id = $2 AND left_at IS NULL
+    `, [householdId, req.user.id]);
+
+    if (memberCheck.rows.length === 0) {
+      logger.warn('Security Event', {
+        event: 'UNAUTHORIZED_HOUSEHOLD_ACCESS',
+        userId: req.user.id,
+        householdId: householdId
+      });
+      return res.status(403).json({
+        error: 'Nincs jogosultságod ehhez a háztartáshoz'
+      });
+    }
+
+    // Ellenőrizzük, hogy a tétel létezik és a megfelelő listához tartozik
+    const itemCheck = await query(`
+      SELECT sli.id, sl.household_id, sl.name as list_name
+      FROM shopping_list_items sli
+      JOIN shopping_lists sl ON sli.shopping_list_id = sl.id
+      WHERE sli.id = $1 AND sl.id = $2 AND sl.household_id = $3
+    `, [itemId, listId, householdId]);
+
+    if (itemCheck.rows.length === 0) {
+      return res.status(404).json({
+        error: 'Nem található',
+        message: 'A tétel nem található vagy nem tartozik ehhez a listához'
+      });
+    }
+
+    // Töröljük a tételt
+    await query(`
+      DELETE FROM shopping_list_items 
+      WHERE id = $1
+    `, [itemId]);
+
+    logger.info('Shopping list item deleted from household', {
+      itemId,
+      listId,
+      householdId,
+      deletedBy: req.user.id
+    });
+
+    res.json({
+      message: 'Tétel sikeresen törölve a bevásárlólistáról'
+    });
+
+  } catch (error) {
+    logger.error('Delete shopping list item error:', error);
+    res.status(500).json({
+      error: 'Szerver hiba',
+      message: 'Tétel törlése során hiba történt'
+    });
+  }
+});
+
 module.exports = router;

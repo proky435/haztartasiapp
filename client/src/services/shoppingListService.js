@@ -139,9 +139,23 @@ class ShoppingListService {
   // Tétel törlése bevásárlólistáról
   async removeShoppingListItem(itemId) {
     try {
-      // A backend API-ban nincs külön delete endpoint, de frissíthetjük
-      // Alternatíva: jelöljük töröltre vagy használjunk más megoldást
-      return true;
+      const currentHousehold = householdsService.getCurrentHousehold();
+      if (!currentHousehold) {
+        throw new Error('Nincs kiválasztott háztartás');
+      }
+
+      // Alapértelmezett lista lekérése
+      const defaultList = await this.getOrCreateDefaultShoppingList();
+      
+      // DELETE kérés küldése a backend-nek
+      const response = await householdsService.deleteShoppingListItem(
+        currentHousehold.id, 
+        defaultList.id, 
+        itemId
+      );
+      
+      console.log('Shopping list item deleted:', itemId);
+      return response;
     } catch (error) {
       console.error('Remove shopping list item error:', error);
       throw error;

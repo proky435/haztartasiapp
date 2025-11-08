@@ -225,6 +225,18 @@ class HouseholdsService {
     }
   }
 
+  // Bevásárlólista tétel törlése
+  async deleteShoppingListItem(householdId, listId, itemId) {
+    try {
+      const response = await apiService.delete(`/households/${householdId}/shopping-lists/${listId}/items/${itemId}`);
+      console.log('Shopping list item deleted via API:', itemId);
+      return response;
+    } catch (error) {
+      console.error('Delete shopping list item error:', error);
+      throw error;
+    }
+  }
+
   // Aktuális háztartás beállítása
   setCurrentHousehold(household) {
     this.currentHousehold = household;
