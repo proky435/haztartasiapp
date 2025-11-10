@@ -155,7 +155,41 @@ ANALYZE shopping_lists;
 ANALYZE shopping_list_items;
 ANALYZE notifications;
 
+-- =====================================================
+-- KÖZMŰFOGYASZTÁS INDEXEK
+-- =====================================================
+
+-- Utility types indexek
+CREATE INDEX idx_utility_types_active ON utility_types(sort_order) WHERE is_active = TRUE;
+
+-- Household utilities indexek
+CREATE INDEX idx_household_utilities_household_date ON household_utilities(household_id, reading_date DESC);
+CREATE INDEX idx_household_utilities_type_date ON household_utilities(utility_type_id, reading_date DESC);
+CREATE INDEX idx_household_utilities_household_type ON household_utilities(household_id, utility_type_id);
+CREATE INDEX idx_household_utilities_added_by ON household_utilities(added_by_user_id);
+
+-- Household utility settings indexek
+CREATE INDEX idx_utility_settings_household ON household_utility_settings(household_id);
+CREATE UNIQUE INDEX idx_utility_settings_household_type ON household_utility_settings(household_id, utility_type_id);
+
+-- Partial indexek közművekhez
+CREATE INDEX idx_utilities_current_month ON household_utilities(household_id, utility_type_id, meter_reading DESC)
+WHERE reading_date >= DATE_TRUNC('month', CURRENT_DATE);
+
+CREATE INDEX idx_utilities_with_cost ON household_utilities(household_id, reading_date DESC)
+WHERE cost IS NOT NULL;
+
+-- =====================================================
+-- STATISZTIKÁK FRISSÍTÉSE (KIEGÉSZÍTÉS)
+-- =====================================================
+
+ANALYZE utility_types;
+ANALYZE household_utilities;
+ANALYZE household_utility_settings;
+
 -- Komment az indexekről
 COMMENT ON INDEX idx_products_search IS 'Full-text search index termék nevekhez és márkákhoz';
 COMMENT ON INDEX idx_inventory_expiry IS 'Lejárati dátum alapú gyors keresés';
 COMMENT ON INDEX idx_notifications_unread IS 'Olvasatlan értesítések gyors lekérdezése';
+COMMENT ON INDEX idx_household_utilities_household_date IS 'Háztartási közműfogyasztás dátum szerinti gyors keresés';
+COMMENT ON INDEX idx_utilities_current_month IS 'Aktuális havi közműfogyasztás gyors lekérdezése';

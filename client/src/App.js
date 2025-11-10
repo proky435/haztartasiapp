@@ -12,6 +12,8 @@ import RecipesList from './components/RecipesList';
 import NotificationBanner from './components/NotificationBanner';
 import HouseholdManager from './components/HouseholdManager';
 import ThemeToggle from './components/ThemeToggle';
+import Utilities from './components/Utilities';
+import UtilitySettings from './components/UtilitySettings';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { useDarkThemeForce } from './hooks/useDarkThemeForce';
 import authService from './services/authService';
@@ -29,7 +31,7 @@ function AppContent() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showHouseholdManager, setShowHouseholdManager] = useState(false);
-  const [currentView, setCurrentView] = useState('inventory'); // 'inventory', 'shopping', 'recipes'
+  const [currentView, setCurrentView] = useState('inventory'); // 'inventory', 'shopping', 'recipes', 'utilities', 'utility-settings'
   const [isLoading, setIsLoading] = useState(true);
   const [shoppingItems, setShoppingItems] = useState([]);
   const [products, setProducts] = useState([]);
@@ -370,6 +372,18 @@ function AppContent() {
             >
               🍳 Receptek
             </button>
+            <button 
+              className={`nav-button ${currentView === 'utilities' ? 'active' : ''}`}
+              onClick={() => setCurrentView('utilities')}
+            >
+              🔌 Közművek
+            </button>
+            <button 
+              className={`nav-button ${currentView === 'utility-settings' ? 'active' : ''}`}
+              onClick={() => setCurrentView('utility-settings')}
+            >
+              ⚙️ Beállítások
+            </button>
           </nav>
         </div>
         
@@ -424,9 +438,23 @@ function AppContent() {
             onItemsChange={(items) => setShoppingItems(items)}
             currentHousehold={currentHousehold}
           />
-        ) : (
+        ) : currentView === 'recipes' ? (
           <RecipesList 
             currentHousehold={currentHousehold}
+          />
+        ) : currentView === 'utilities' ? (
+          <Utilities 
+            currentHousehold={currentHousehold}
+          />
+        ) : currentView === 'utility-settings' ? (
+          <UtilitySettings 
+            currentHousehold={currentHousehold}
+          />
+        ) : (
+          <ProductList 
+            products={products} 
+            onUpdate={handleUpdateProduct}
+            onDelete={handleDeleteProduct}
           />
         )}
       </main>

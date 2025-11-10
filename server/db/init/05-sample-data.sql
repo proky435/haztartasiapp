@@ -305,6 +305,142 @@ INSERT INTO notifications (user_id, household_id, type, title, message, priority
     2
 );
 
+-- =====================================================
+-- KÖZMŰFOGYASZTÁS ALAPADATOK
+-- =====================================================
+
+-- Közműtípusok beszúrása
+INSERT INTO utility_types (name, display_name, unit, icon, color, sort_order) VALUES
+('water_cold', 'Hideg víz', 'm³', '💧', '#3498db', 1),
+('water_hot', 'Meleg víz', 'm³', '🔥', '#e74c3c', 2),
+('gas', 'Gáz', 'm³', '🔥', '#f39c12', 3),
+('electricity', 'Villany', 'kWh', '⚡', '#f1c40f', 4),
+('heating', 'Távfűtés', 'GJ', '🏠', '#9b59b6', 5)
+ON CONFLICT (name) DO NOTHING;
+
+-- Demo háztartások közműbeállításai
+INSERT INTO household_utility_settings (household_id, utility_type_id, is_enabled, meter_number, current_unit_price, target_monthly_consumption) VALUES
+-- Nagy Család beállításai
+(
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    (SELECT id FROM utility_types WHERE name = 'water_cold'),
+    true,
+    'VIZ001234',
+    580.50,
+    8.5
+),
+(
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    (SELECT id FROM utility_types WHERE name = 'gas'),
+    true,
+    'GAZ567890',
+    285.75,
+    45.0
+),
+(
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    (SELECT id FROM utility_types WHERE name = 'electricity'),
+    true,
+    'VIL123456',
+    70.50,
+    180.0
+),
+-- Kovács Háztartás beállításai
+(
+    'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+    (SELECT id FROM utility_types WHERE name = 'water_cold'),
+    true,
+    'VIZ998877',
+    580.50,
+    6.0
+),
+(
+    'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+    (SELECT id FROM utility_types WHERE name = 'electricity'),
+    true,
+    'VIL654321',
+    70.50,
+    120.0
+);
+
+-- Demo mérőóra állások (utolsó 3 hónap)
+INSERT INTO household_utilities (household_id, utility_type_id, reading_date, meter_reading, unit_price, added_by_user_id) VALUES
+-- Nagy Család - Hideg víz
+(
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    (SELECT id FROM utility_types WHERE name = 'water_cold'),
+    '2024-08-01',
+    1245.350,
+    580.50,
+    '11111111-1111-1111-1111-111111111111'
+),
+(
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    (SELECT id FROM utility_types WHERE name = 'water_cold'),
+    '2024-09-01',
+    1253.120,
+    580.50,
+    '11111111-1111-1111-1111-111111111111'
+),
+(
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    (SELECT id FROM utility_types WHERE name = 'water_cold'),
+    '2024-10-01',
+    1261.890,
+    580.50,
+    '11111111-1111-1111-1111-111111111111'
+),
+-- Nagy Család - Gáz
+(
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    (SELECT id FROM utility_types WHERE name = 'gas'),
+    '2024-08-01',
+    2856.450,
+    285.75,
+    '11111111-1111-1111-1111-111111111111'
+),
+(
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    (SELECT id FROM utility_types WHERE name = 'gas'),
+    '2024-09-01',
+    2898.120,
+    285.75,
+    '11111111-1111-1111-1111-111111111111'
+),
+(
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    (SELECT id FROM utility_types WHERE name = 'gas'),
+    '2024-10-01',
+    2943.780,
+    285.75,
+    '11111111-1111-1111-1111-111111111111'
+),
+-- Nagy Család - Villany
+(
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    (SELECT id FROM utility_types WHERE name = 'electricity'),
+    '2024-08-01',
+    15678.500,
+    70.50,
+    '11111111-1111-1111-1111-111111111111'
+),
+(
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    (SELECT id FROM utility_types WHERE name = 'electricity'),
+    '2024-09-01',
+    15845.200,
+    70.50,
+    '11111111-1111-1111-1111-111111111111'
+),
+(
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    (SELECT id FROM utility_types WHERE name = 'electricity'),
+    '2024-10-01',
+    16023.800,
+    70.50,
+    '11111111-1111-1111-1111-111111111111'
+);
+
 -- Statisztikák frissítése
 ANALYZE;
 

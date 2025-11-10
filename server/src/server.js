@@ -25,6 +25,8 @@ const productRoutes = require('./routes/products');
 const inventoryRoutes = require('./routes/inventory');
 const shoppingListRoutes = require('./routes/shoppingLists');
 const notificationRoutes = require('./routes/notifications');
+const utilitiesRoutes = require('./routes/utilities');
+const utilitySettingsRoutes = require('./routes/utility-settings');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -145,6 +147,8 @@ apiRouter.use('/products', productRoutes);
 apiRouter.use('/inventory', inventoryRoutes);
 apiRouter.use('/shopping-lists', shoppingListRoutes);
 apiRouter.use('/notifications', notificationRoutes);
+apiRouter.use('/utilities', utilitiesRoutes);
+apiRouter.use('/utility-settings', utilitySettingsRoutes);
 
 app.use(`/api/${process.env.API_VERSION || 'v1'}`, apiRouter);
 
@@ -181,6 +185,21 @@ if (process.env.ENABLE_API_DOCS === 'true' && process.env.NODE_ENV === 'developm
           'POST /households/:id/inventory': 'Termék hozzáadása készlethez',
           'PUT /inventory/:id': 'Készlet tétel módosítása',
           'DELETE /inventory/:id': 'Termék eltávolítása készletből'
+        },
+        utilities: {
+          'GET /utilities/types': 'Közműtípusok listája',
+          'GET /utilities': 'Háztartás közműfogyasztásai',
+          'POST /utilities': 'Új mérőóra állás rögzítése',
+          'PUT /utilities/:id': 'Mérőóra állás módosítása',
+          'DELETE /utilities/:id': 'Mérőóra állás törlése',
+          'GET /utilities/stats/:household_id': 'Fogyasztási statisztikák'
+        },
+        'utility-settings': {
+          'GET /utility-settings/:household_id': 'Háztartás közműbeállításai',
+          'POST /utility-settings/:household_id': 'Közműbeállítás létrehozása/frissítése',
+          'PUT /utility-settings/:household_id/:utility_type_id': 'Közműbeállítás módosítása',
+          'DELETE /utility-settings/:household_id/:utility_type_id': 'Közműbeállítás letiltása',
+          'GET /utility-settings/:household_id/calculate/:utility_type_id': 'Költségkalkulátor'
         }
       }
     });
