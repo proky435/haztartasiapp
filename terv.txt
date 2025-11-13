@@ -1,0 +1,108 @@
+🚀 Fejlesztési javaslatok a Háztartási Apphoz
+📱 Receptek modul továbbfejlesztése
+
+🔥 Prioritás: Magas
+📸 Kép feltöltés saját receptekhez: Lehetőség saját fotók hozzáadására
+⭐ Értékelési rendszer: 5 csillagos értékelés + kommentek
+🔍 Fejlett keresés: Szűrés kalória, allergiák, diéta típusok szerint
+📊 Táplálkozási információk: Kalória, fehérje, szénhidrát számítás
+👨‍👩‍👧‍👦 Családi kedvencek: Családtagok kedvenc receptjeinek jelölése
+🔄 Prioritás: Közepes
+🛒 Bevásárlólista integráció: Recept alapján automatikus lista generálás
+📅 Étkezési terv: Heti menü tervezés receptek alapján
+🔄 Recept megosztás: QR kód vagy link generálás megosztáshoz ❌
+📝 Recept importálás: URL-ből vagy PDF-ből recept kinyerés ❌
+🏷️ Tag rendszer: Kategóriák és címkék (vegetáriánus, gyors, egészséges)
+🏠 Háztartás kezelés fejlesztése
+
+🔥 Prioritás: Magas
+📊 Költségvetés követés: Havi/heti költségvetés beállítás és nyomon követés
+📈 Statisztikák: Kiadások elemzése kategóriánként, trendek
+🔔 Intelligens értesítések: Lejárat előtti figyelmeztetések
+📱 Mobil app: React Native vagy PWA fejlesztés ❌
+🛍️ Bolt integráció: Online áruházak API kapcsolat árakhoz
+
+🔄 Prioritás: Közepes
+📋 Feladat kezelő: Háztartási teendők elosztása családtagok között
+🎯 Célok követése: Spórolási célok, fenntarthatósági mutatók
+📊 Készlet optimalizálás: AI alapú javaslatok készletszinthez
+🔄 Automatikus rendelés: Ismétlődő termékek auto-rendelése
+📍 Bolt térkép: Legközelebbi boltok és árak összehasonlítása
+🛠️ Technikai fejlesztések
+
+🔥 Prioritás: Magas
+🔐 Kétfaktoros hitelesítés: SMS/email alapú 2FA
+☁️ Fájl feltöltés: Cloudinary/AWS S3 integráció képekhez
+📱 PWA fejlesztés: Offline működés, push értesítések
+🔍 Elasticsearch: Fejlett keresési funkciók
+📊 Analytics: Google Analytics/Mixpanel integráció
+
+🔄 Prioritás: Közepes
+🤖 AI chatbot: Receptjavaslatok, háztartási tanácsok
+📧 Email értesítések: Heti összesítők, lejárati figyelmeztetések
+🔄 API rate limiting: Külső API-k optimalizált használata
+🧪 Unit tesztek: Jest/Cypress tesztek írása
+🐳 Docker: Konténerizálás deployment-hez
+🎨 UI/UX fejlesztések
+
+🔥 Prioritás: Magas
+🌙 Sötét/világos téma: Teljes téma rendszer implementálás ❌
+📱 Reszponzív design: Tablet és mobil optimalizálás
+♿ Akadálymentesítés: ARIA labelek, képernyőolvasó támogatás
+🎨 Animációk: Smooth átmenetek, loading animációk
+🔍 Gyors keresés: Global search minden modulban
+
+🔄 Prioritás: Közepes
+🎯 Onboarding: Új felhasználók bevezetése
+💡 Tooltipek: Kontextuális súgó rendszer
+🎨 Testreszabható dashboard: Widget-ek áthelyezése
+📊 Interaktív grafikonok: Chart.js/D3.js integrálás
+🔔 Toast értesítések: Szebb feedback rendszer
+🔐 Biztonság és adatvédelem
+
+🔥 Prioritás: Magas
+🛡️ GDPR compliance: Adatvédelmi szabályzat implementálás
+🔒 Adattitkosítás: Érzékeny adatok titkosítása
+📝 Audit log: Felhasználói műveletek naplózása
+🔐 Session kezelés: Biztonságos session management
+🚫 Rate limiting: Brute force támadások elleni védelem
+📊 Analitika és jelentések
+
+🔄 Prioritás: Közepes
+📈 Költség trendek: Havi/éves költségvetési jelentések
+🥘 Recept statisztikák: Legnépszerűbb receptek, főzési szokások
+📊 Készlet forgalom: Termékek felhasználási sebessége
+🎯 Célok követése: Spórolási és fenntarthatósági célok
+📱 Használati statisztikák: App használati minták elemzése
+🌍 Integráció és API-k
+
+🔄 Prioritás: Alacsony
+🛒 Bolt API-k: Tesco, Auchan, Lidl online árak
+📱 Barcode scanner: Termékek gyors hozzáadása
+🥗 Táplálkozási API: MyFitnessPal, Nutritionix integráció
+📧 Email integráció: Nyugták automatikus feldolgozása
+🏦 Bank API: Automatikus kiadás kategorizálás
+🚀 Hosszú távú vízió
+🎯 Jövőbeli funkciók
+🤖 AI asszisztens: Személyre szabott javaslatok
+🌱 Fenntarthatóság: Karbon lábnyom számítás
+👥 Közösségi funkciók: Recept megosztás szomszédokkal
+🏪 Helyi termelők: Közvetlen kapcsolat helyi gazdákkal
+📱 IoT integráció: Okos hűtő, mérleg kapcsolat
+
+📋 Implementálási prioritások
+1. fázis (1-2 hónap)
+Receptek kép feltöltés
+PWA alapok
+Sötét téma befejezése
+Mobil optimalizálás
+2. fázis (3-4 hónap)
+Költségvetés modul
+Statisztikák
+Email értesítések
+Fejlett keresés
+3. fázis (5-6 hónap)
+AI javaslatok
+Bolt integráció
+Mobil app
+Analitika dashboard

@@ -1,9 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import recipesService from '../services/recipesService';
 import inventoryService from '../services/inventoryService';
+import customRecipesService from '../services/customRecipesService';
+import shoppingListService from '../services/shoppingListService';
+import ImageUpload from './ImageUpload';
 import './RecipesList.css';
 
 function RecipesList({ currentHousehold }) {
+  // Jelenlegi felhasználó lekérése
+  const getCurrentUser = () => {
+    try {
+      const userData = localStorage.getItem('user');
+      return userData ? JSON.parse(userData) : null;
+    } catch (error) {
+      console.error('Hiba a felhasználó adatok lekérésekor:', error);
+      return null;
+    }
+  };
+
+  const currentUser = getCurrentUser();
   const [recipes, setRecipes] = useState([]);
   const [customRecipes, setCustomRecipes] = useState([]);
   const [availableIngredients, setAvailableIngredients] = useState([]);
@@ -23,7 +38,9 @@ function RecipesList({ currentHousehold }) {
     cookingTime: '',
     servings: '',
     difficulty: 'Könnyű',
-    tags: []
+    tags: [],
+    imageUrl: null,
+    imageFilename: null
   });
   const [filters, setFilters] = useState({
     diet: '',
@@ -35,13 +52,13 @@ function RecipesList({ currentHousehold }) {
   useEffect(() => {
     loadAvailableIngredients();
     loadCustomRecipes();
-  }, [currentHousehold]);
+  }, [currentHousehold]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (availableIngredients.length > 0 && activeTab === 'suggestions') {
       findRecipesByIngredients();
     }
-  }, [availableIngredients, activeTab]);
+  }, [availableIngredients, activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Elérhető hozzávalók betöltése a készletből
   const loadAvailableIngredients = async () => {
@@ -62,59 +79,298 @@ function RecipesList({ currentHousehold }) {
     }
   };
 
-  // Saját receptek betöltése localStorage-ból
-  const loadCustomRecipes = () => {
+  // Saját receptek betöltése API-ból és szinkronizálás
+  const loadCustomRecipes = async () => {
     try {
-      const saved = localStorage.getItem(`customRecipes_${currentHousehold?.id || 'default'}`);
-      if (saved) {
-        setCustomRecipes(JSON.parse(saved));
-      }
+      setIsLoading(true);
+      
+      // Szinkronizálás localStorage és API között
+      const recipes = await customRecipesService.syncWithLocalStorage(currentHousehold?.id);
+      setCustomRecipes(recipes);
     } catch (error) {
       console.error('Error loading custom recipes:', error);
-      setCustomRecipes([]);
+      
+      // Fallback: localStorage-ból betöltés ha API nem elérhető
+      const localRecipes = customRecipesService.loadFromLocalStorage(currentHousehold?.id);
+      setCustomRecipes(localRecipes);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Saját recept mentése
-  const saveCustomRecipe = () => {
+  const saveCustomRecipe = async () => {
     if (!newRecipe.title.trim() || newRecipe.ingredients.filter(i => i.trim()).length === 0) {
       alert('Kérlek add meg a recept címét és legalább egy hozzávalót!');
       return;
     }
 
-    const recipe = {
-      id: Date.now(),
-      ...newRecipe,
-      ingredients: newRecipe.ingredients.filter(i => i.trim()),
-      instructions: newRecipe.instructions.filter(i => i.trim()),
-      createdAt: new Date().toISOString(),
-      isCustom: true
-    };
+    try {
+      setIsLoading(true);
+      
+      // API-ba mentés
+      const savedRecipe = await customRecipesService.createRecipe(newRecipe);
+      
+      // State frissítése
+      const updated = [...customRecipes, savedRecipe];
+      setCustomRecipes(updated);
+      
+      // LocalStorage frissítése
+      customRecipesService.saveToLocalStorage(updated, currentHousehold?.id);
+      
+      // Reset form
+      setNewRecipe({
+        title: '',
+        description: '',
+        ingredients: [''],
+        instructions: [''],
+        cookingTime: '',
+        servings: '',
+        difficulty: 'Könnyű',
+        tags: [],
+        imageUrl: null,
+        imageFilename: null
+      });
+      setShowAddRecipe(false);
+      
+      alert('Recept sikeresen mentve!');
+    } catch (error) {
+      console.error('Hiba a recept mentésekor:', error);
+      
+      // Fallback: helyi mentés ha API nem elérhető
+      const recipe = {
+        id: Date.now(),
+        ...newRecipe,
+        ingredients: newRecipe.ingredients.filter(i => i.trim()),
+        instructions: newRecipe.instructions.filter(i => i.trim()),
+        createdAt: new Date().toISOString(),
+        isCustom: true
+      };
 
-    const updated = [...customRecipes, recipe];
-    setCustomRecipes(updated);
-    localStorage.setItem(`customRecipes_${currentHousehold?.id || 'default'}`, JSON.stringify(updated));
-    
-    // Reset form
-    setNewRecipe({
-      title: '',
-      description: '',
-      ingredients: [''],
-      instructions: [''],
-      cookingTime: '',
-      servings: '',
-      difficulty: 'Könnyű',
-      tags: []
-    });
-    setShowAddRecipe(false);
+      const updated = [...customRecipes, recipe];
+      setCustomRecipes(updated);
+      customRecipesService.saveToLocalStorage(updated, currentHousehold?.id);
+      
+      // Reset form
+      setNewRecipe({
+        title: '',
+        description: '',
+        ingredients: [''],
+        instructions: [''],
+        cookingTime: '',
+        servings: '',
+        difficulty: 'Könnyű',
+        tags: [],
+        imageUrl: null,
+        imageFilename: null
+      });
+      setShowAddRecipe(false);
+      
+      alert('Recept helyileg mentve. Szinkronizálás a következő alkalommal történik.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Saját recept törlése
-  const deleteCustomRecipe = (id) => {
-    if (window.confirm('Biztosan törölni szeretnéd ezt a receptet?')) {
+  const deleteCustomRecipe = async (id) => {
+    if (!window.confirm('Biztosan törölni szeretnéd ezt a receptet?')) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      // API-ból törlés
+      await customRecipesService.deleteRecipe(id);
+      
+      // State frissítése
       const updated = customRecipes.filter(recipe => recipe.id !== id);
       setCustomRecipes(updated);
-      localStorage.setItem(`customRecipes_${currentHousehold?.id || 'default'}`, JSON.stringify(updated));
+      
+      // LocalStorage frissítése
+      customRecipesService.saveToLocalStorage(updated, currentHousehold?.id);
+      
+      alert('Recept sikeresen törölve!');
+    } catch (error) {
+      console.error('Hiba a recept törlésekor:', error);
+      
+      // Fallback: helyi törlés ha API nem elérhető
+      const updated = customRecipes.filter(recipe => recipe.id !== id);
+      setCustomRecipes(updated);
+      customRecipesService.saveToLocalStorage(updated, currentHousehold?.id);
+      
+      alert('Recept helyileg törölve. Szinkronizálás a következő alkalommal történik.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Recept hozzávalóinak hozzáadása a bevásárlólistához
+  const addRecipeToShoppingList = async (recipe) => {
+    try {
+      setIsLoading(true);
+      
+      if (!recipe.ingredients || recipe.ingredients.length === 0) {
+        alert('Ehhez a recepthez nincsenek hozzávalók megadva.');
+        return;
+      }
+
+      // Szűrjük ki az üres hozzávalókat
+      const validIngredients = recipe.ingredients.filter(ingredient => 
+        ingredient && ingredient.trim()
+      );
+
+      if (validIngredients.length === 0) {
+        alert('Nincsenek érvényes hozzávalók a receptben.');
+        return;
+      }
+
+      // Hozzáadjuk a hozzávalókat a bevásárlólistához
+      let addedCount = 0;
+      let errorCount = 0;
+
+      for (const ingredient of validIngredients) {
+        try {
+          const ingredientName = ingredient.trim();
+          if (!ingredientName) {
+            console.warn('Üres hozzávaló kihagyva');
+            continue;
+          }
+
+          await shoppingListService.addItemToDefaultList({
+            name: ingredientName,
+            quantity: 1,
+            unit: 'db',
+            category: 'Recept alapján',
+            notes: `${recipe.title} receptből`
+          });
+          addedCount++;
+        } catch (error) {
+          console.error(`Hiba a hozzávaló hozzáadásakor: ${ingredient}`, error);
+          errorCount++;
+        }
+      }
+
+      // Eredmény üzenet
+      if (addedCount > 0) {
+        const message = errorCount > 0 
+          ? `${addedCount} hozzávaló hozzáadva a bevásárlólistához. ${errorCount} hiba történt.`
+          : `${addedCount} hozzávaló sikeresen hozzáadva a bevásárlólistához!`;
+        
+        alert(message);
+      } else {
+        alert('Nem sikerült hozzáadni a hozzávalókat a bevásárlólistához.');
+      }
+
+    } catch (error) {
+      console.error('Hiba a bevásárlólista frissítésekor:', error);
+      alert('Hiba történt a bevásárlólista frissítésekor: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Spoonacular recept összes hozzávalójának hozzáadása a bevásárlólistához
+  const addSpoonacularRecipeToShoppingList = async (recipe) => {
+    try {
+      setIsLoading(true);
+      
+      // Először lekérjük a recept részleteit, hogy megkapjuk a hozzávalókat
+      const detailedRecipe = await recipesService.getRecipeDetails(recipe.id);
+      
+      if (!detailedRecipe.extendedIngredients || detailedRecipe.extendedIngredients.length === 0) {
+        alert('Ehhez a recepthez nincsenek hozzávalók megadva.');
+        return;
+      }
+
+      let addedCount = 0;
+      let errorCount = 0;
+
+      for (const ingredient of detailedRecipe.extendedIngredients) {
+        try {
+          const ingredientName = ingredient.original || ingredient.name || 'Ismeretlen hozzávaló';
+          
+          if (!ingredientName || ingredientName.trim() === '') {
+            console.warn('Üres hozzávaló kihagyva:', ingredient);
+            continue;
+          }
+          
+          await shoppingListService.addItemToDefaultList({
+            name: ingredientName.trim(),
+            quantity: ingredient.amount || 1,
+            unit: ingredient.unit || 'db',
+            category: 'Recept alapján',
+            notes: `${recipe.title} receptből`
+          });
+          addedCount++;
+        } catch (error) {
+          console.error(`Hiba a hozzávaló hozzáadásakor: ${ingredient.name}`, error);
+          errorCount++;
+        }
+      }
+
+      // Eredmény üzenet
+      if (addedCount > 0) {
+        const message = errorCount > 0 
+          ? `${addedCount} hozzávaló hozzáadva a bevásárlólistához. ${errorCount} hiba történt.`
+          : `${addedCount} hozzávaló sikeresen hozzáadva a bevásárlólistához!`;
+        
+        alert(message);
+      } else {
+        alert('Nem sikerült hozzáadni a hozzávalókat a bevásárlólistához.');
+      }
+
+    } catch (error) {
+      console.error('Hiba a Spoonacular recept bevásárlólista frissítésekor:', error);
+      alert('Hiba történt a recept részleteinek lekérésekor: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Kép kezelő funkciók
+  const handleImageUpload = (imageData) => {
+    setNewRecipe(prev => ({
+      ...prev,
+      imageUrl: imageData.imageUrl,
+      imageFilename: imageData.imageFilename
+    }));
+  };
+
+  const handleImageRemove = async () => {
+    if (newRecipe.imageFilename) {
+      try {
+        const response = await fetch(`/api/v1/upload/recipe-image/${newRecipe.imageFilename}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+            'X-Current-Household': getCurrentHouseholdId()
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Hiba a kép törlésekor');
+        }
+      } catch (error) {
+        console.error('Image delete error:', error);
+        // Folytatjuk akkor is, ha a törlés sikertelen
+      }
+    }
+
+    setNewRecipe(prev => ({
+      ...prev,
+      imageUrl: null,
+      imageFilename: null
+    }));
+  };
+
+  const getCurrentHouseholdId = () => {
+    try {
+      const currentHousehold = localStorage.getItem('currentHousehold');
+      return currentHousehold ? JSON.parse(currentHousehold).id : null;
+    } catch (error) {
+      return null;
     }
   };
 
@@ -183,6 +439,11 @@ function RecipesList({ currentHousehold }) {
       // Receptek értékelése elérhetőség alapján
       const scoredRecipes = recipesService.scoreRecipesByAvailability(foundRecipes, availableIngredients);
       setRecipes(scoredRecipes);
+      
+      // Ha nincs recept, jelezzük
+      if (scoredRecipes.length === 0) {
+        console.info('Nincs elérhető recept a jelenlegi hozzávalókhoz vagy az API kvóta elfogyott.');
+      }
       
     } catch (error) {
       console.error('Error finding recipes:', error);
@@ -430,7 +691,8 @@ function RecipesList({ currentHousehold }) {
           {!isLoading && !error && recipes.length === 0 && (
             <div className="no-recipes">
               <p>🤷‍♀️ Nem találtunk recepteket</p>
-              <p>Próbálj meg más keresési feltételeket vagy adj hozzá több hozzávalót a készlethez!</p>
+              <p>Az API kvóta elfogyhatott vagy próbálj meg más keresési feltételeket!</p>
+              <p>💡 <strong>Tipp:</strong> Használd a "Saját receptek" fület saját receptjeid hozzáadásához!</p>
             </div>
           )}
 
@@ -496,6 +758,13 @@ function RecipesList({ currentHousehold }) {
                       >
                         🛒 Hiányzó
                       </button>
+                      <button 
+                        onClick={() => addSpoonacularRecipeToShoppingList(recipe)}
+                        className="add-all-to-shopping-button"
+                        title="Összes hozzávaló hozzáadása"
+                      >
+                        🛒 Mind
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -519,6 +788,17 @@ function RecipesList({ currentHousehold }) {
             <div className="recipes-grid">
               {customRecipes.map(recipe => (
                 <div key={recipe.id} className="recipe-card custom-recipe">
+                  {/* Recept kép */}
+                  {recipe.image_url && (
+                    <div className="recipe-image">
+                      <img 
+                        src={recipe.image_url} 
+                        alt={recipe.title}
+                        onError={(e) => e.target.style.display = 'none'}
+                      />
+                    </div>
+                  )}
+                  
                   <div className="recipe-content">
                     <h3 className="recipe-title">{recipe.title}</h3>
                     
@@ -533,7 +813,9 @@ function RecipesList({ currentHousehold }) {
                       {recipe.servings && (
                         <span className="stat">👥 {recipe.servings} adag</span>
                       )}
-                      <span className="stat">📝 Saját</span>
+                      {recipe.created_by_name && (
+                        <span className="stat">👤 {recipe.created_by_name}</span>
+                      )}
                     </div>
                     
                     <div className="recipe-tags">
@@ -548,11 +830,21 @@ function RecipesList({ currentHousehold }) {
                         📖 Recept
                       </button>
                       <button 
-                        onClick={() => deleteCustomRecipe(recipe.id)}
-                        className="delete-recipe-button"
+                        onClick={() => addRecipeToShoppingList(recipe)}
+                        className="add-to-shopping-button"
+                        title="Hozzávalók hozzáadása a bevásárlólistához"
                       >
-                        🗑️ Törlés
+                        🛒 Lista
                       </button>
+                      {/* Törlés gomb csak a saját recepteknél */}
+                      {currentUser && recipe.created_by === currentUser.id && (
+                        <button 
+                          onClick={() => deleteCustomRecipe(recipe.id)}
+                          className="delete-recipe-button"
+                        >
+                          🗑️ Törlés
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -577,18 +869,37 @@ function RecipesList({ currentHousehold }) {
             </div>
             
             <div className="modal-content">
-              <div className="recipe-image-large">
-                <img src={selectedRecipe.image} alt={selectedRecipe.title} />
-              </div>
+              {!selectedRecipe.isCustom && selectedRecipe.image && (
+                <div className="recipe-image-large">
+                  <img src={selectedRecipe.image} alt={selectedRecipe.title} />
+                </div>
+              )}
               
               <div className="recipe-info">
                 <div className="recipe-meta">
-                  <span>⏱️ {selectedRecipe.readyInMinutes} perc</span>
-                  <span>👥 {selectedRecipe.servings} adag</span>
-                  <span>❤️ {selectedRecipe.likes} kedvelés</span>
+                  {selectedRecipe.isCustom ? (
+                    <>
+                      {selectedRecipe.cookingTime && <span>⏱️ {selectedRecipe.cookingTime} perc</span>}
+                      {selectedRecipe.servings && <span>👥 {selectedRecipe.servings} adag</span>}
+                      {selectedRecipe.difficulty && <span>🎯 {selectedRecipe.difficulty}</span>}
+                      {selectedRecipe.created_by_name && <span>👤 Készítette: {selectedRecipe.created_by_name}</span>}
+                    </>
+                  ) : (
+                    <>
+                      <span>⏱️ {selectedRecipe.readyInMinutes} perc</span>
+                      <span>👥 {selectedRecipe.servings} adag</span>
+                      <span>❤️ {selectedRecipe.likes} kedvelés</span>
+                    </>
+                  )}
                 </div>
                 
-                {selectedRecipe.summary && (
+                {selectedRecipe.description && selectedRecipe.isCustom && (
+                  <div className="recipe-summary">
+                    <p>{selectedRecipe.description}</p>
+                  </div>
+                )}
+                
+                {selectedRecipe.summary && !selectedRecipe.isCustom && (
                   <div 
                     className="recipe-summary"
                     dangerouslySetInnerHTML={{ __html: selectedRecipe.summary }}
@@ -598,26 +909,47 @@ function RecipesList({ currentHousehold }) {
                 <div className="ingredients-section">
                   <h3>Hozzávalók:</h3>
                   <ul className="ingredients-list">
-                    {selectedRecipe.extendedIngredients?.map((ingredient, index) => (
-                      <li key={index} className="ingredient-item">
-                        <span className="ingredient-amount">
-                          {ingredient.amount} {ingredient.unit}
-                        </span>
-                        <span className="ingredient-name">{ingredient.name}</span>
-                      </li>
-                    ))}
+                    {selectedRecipe.isCustom ? (
+                      // Saját receptek hozzávalói
+                      selectedRecipe.ingredients?.map((ingredient, index) => (
+                        <li key={index} className="ingredient-item">
+                          <span className="ingredient-name">{ingredient}</span>
+                        </li>
+                      ))
+                    ) : (
+                      // API receptek hozzávalói
+                      selectedRecipe.extendedIngredients?.map((ingredient, index) => (
+                        <li key={index} className="ingredient-item">
+                          <span className="ingredient-amount">
+                            {ingredient.amount} {ingredient.unit}
+                          </span>
+                          <span className="ingredient-name">{ingredient.name}</span>
+                        </li>
+                      ))
+                    )}
                   </ul>
                 </div>
                 
-                {selectedRecipe.analyzedInstructions?.length > 0 && (
+                {((selectedRecipe.isCustom && selectedRecipe.instructions?.length > 0) || 
+                  (!selectedRecipe.isCustom && selectedRecipe.analyzedInstructions?.length > 0)) && (
                   <div className="instructions-section">
                     <h3>Elkészítés:</h3>
                     <ol className="instructions-list">
-                      {selectedRecipe.analyzedInstructions[0].steps?.map((step, index) => (
-                        <li key={index} className="instruction-step">
-                          {step.step}
-                        </li>
-                      ))}
+                      {selectedRecipe.isCustom ? (
+                        // Saját receptek utasításai
+                        selectedRecipe.instructions?.map((instruction, index) => (
+                          <li key={index} className="instruction-step">
+                            {instruction}
+                          </li>
+                        ))
+                      ) : (
+                        // API receptek utasításai
+                        selectedRecipe.analyzedInstructions[0].steps?.map((step, index) => (
+                          <li key={index} className="instruction-step">
+                            {step.step}
+                          </li>
+                        ))
+                      )}
                     </ol>
                   </div>
                 )}
@@ -663,6 +995,14 @@ function RecipesList({ currentHousehold }) {
                     rows="3"
                   />
                 </div>
+
+                {/* Kép feltöltés */}
+                <ImageUpload
+                  onImageUpload={handleImageUpload}
+                  onImageRemove={handleImageRemove}
+                  currentImage={newRecipe.imageUrl}
+                  disabled={isLoading}
+                />
 
                 <div className="form-row">
                   <div className="form-group">

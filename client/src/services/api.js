@@ -44,10 +44,22 @@ class ApiService {
     };
 */
 
-const config = {
+    // Get current household for API requests
+    const getCurrentHouseholdId = () => {
+      try {
+        const currentHousehold = localStorage.getItem('currentHousehold');
+        return currentHousehold ? JSON.parse(currentHousehold).id : null;
+      } catch (error) {
+        return null;
+      }
+    };
+
+    const config = {
       headers: {
         'Content-Type': 'application/json',
         ...(token && { Authorization: `Bearer ${token}` }),
+        // Add current household header
+        ...(getCurrentHouseholdId() && { 'X-Current-Household': getCurrentHouseholdId() }),
         ...options.headers,
       },
       

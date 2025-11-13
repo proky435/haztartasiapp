@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Háztartás",
+  "name": "Háztartási Alkalmazás",
+  "description": "Intelligens háztartás kezelő alkalmazás készlettel, receptekkel és költségvetéssel",
   "icons": [
     {
       "src": "favicon.ico",
@@ -10,16 +11,46 @@
     {
       "src": "logo192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "maskable any"
     },
     {
       "src": "logo512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "maskable any"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "orientation": "portrait-primary",
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff",
+  "categories": ["lifestyle", "productivity", "utilities"],
+  "lang": "hu",
+  "scope": "/",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "shortcuts": [
+    {
+      "name": "Készlet",
+      "short_name": "Készlet",
+      "description": "Háztartási készlet megtekintése",
+      "url": "/?view=inventory",
+      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Receptek",
+      "short_name": "Receptek",
+      "description": "Receptek böngészése",
+      "url": "/?view=recipes",
+      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Bevásárlólista",
+      "short_name": "Lista",
+      "description": "Bevásárlólista kezelése",
+      "url": "/?view=shopping",
+      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+    }
+  ]
 }

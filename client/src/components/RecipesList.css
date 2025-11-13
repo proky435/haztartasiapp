@@ -474,17 +474,20 @@
   justify-content: center;
   z-index: 1000;
   padding: var(--spacing);
+  overflow-y: auto;
 }
 
 .recipe-modal {
   background: var(--surface-color);
   border-radius: var(--border-radius-xl);
   max-width: 800px;
-  max-height: 90vh;
+  max-height: 85vh;
   width: 100%;
-  overflow: hidden;
+  overflow-y: auto;
   box-shadow: 0 20px 60px var(--shadow-color);
   animation: modalSlideIn 0.3s ease;
+  margin: auto;
+  position: relative;
 }
 
 @keyframes modalSlideIn {
@@ -775,6 +778,53 @@
   font-weight: 600;
 }
 
+/* Shopping list integration buttons */
+.add-to-shopping-button,
+.add-all-to-shopping-button {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.add-to-shopping-button:hover,
+.add-all-to-shopping-button:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.add-all-to-shopping-button {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.add-all-to-shopping-button:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* Mobile responsive adjustments for shopping buttons */
+@media (max-width: 768px) {
+  .add-to-shopping-button,
+  .add-all-to-shopping-button {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+  }
+  
+  .recipe-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
 .save-button:hover {
   background: var(--success-hover-color);
 }
@@ -812,8 +862,13 @@
   }
   
   .recipe-modal {
-    margin: var(--spacing-sm);
-    max-height: 95vh;
+    margin: var(--spacing-xs);
+    max-height: 90vh;
+    max-width: 95vw;
+  }
+  
+  .recipe-modal-overlay {
+    padding: var(--spacing-xs);
   }
   
   .modal-content {

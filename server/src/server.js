@@ -30,6 +30,9 @@ const utilitySettingsRoutes = require('./routes/utility-settings');
 const utilityPricingRoutes = require('./routes/utility-pricing');
 const utilityCalculatorRoutes = require('./routes/utility-calculator');
 const householdCostsRoutes = require('./routes/household-costs');
+const recipesRoutes = require('./routes/recipes');
+const uploadRoutes = require('./routes/upload');
+const publicRecipesRoutes = require('./routes/public-recipes');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -64,7 +67,7 @@ const corsOptions = {
       ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-Current-Household'],
   exposedHeaders: ['X-Total-Count'],
   optionsSuccessStatus: 200, // Some legacy browsers choke on 204
   preflightContinue: false
@@ -180,8 +183,14 @@ apiRouter.use('/utility-settings', utilitySettingsRoutes);
 apiRouter.use('/utility-pricing', utilityPricingRoutes);
 apiRouter.use('/utility-calculator', utilityCalculatorRoutes);
 apiRouter.use('/household-costs', householdCostsRoutes);
+apiRouter.use('/recipes', recipesRoutes);
+apiRouter.use('/upload', uploadRoutes);
+apiRouter.use('/shared-recipes', publicRecipesRoutes);
 
 app.use(`/api/${process.env.API_VERSION || 'v1'}`, apiRouter);
+
+// Static file serving for uploaded images
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // API documentation (development only)
 if (process.env.ENABLE_API_DOCS === 'true' && process.env.NODE_ENV === 'development') {

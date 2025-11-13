@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import './styles/themes.css';
 import './styles/dark-theme-fixes.css';
+import './styles/mobile.css';
 import ProductList from './components/ProductList';
 import NewProductModal from './components/NewProductModal';
 import LoginPage from './components/LoginPage';
@@ -14,10 +15,12 @@ import HouseholdManager from './components/HouseholdManager';
 import ThemeToggle from './components/ThemeToggle';
 import Utilities from './components/Utilities';
 import MinimalTest from './components/MinimalTest';
+import PWAPrompt from './components/PWAPrompt';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { useDarkThemeForce } from './hooks/useDarkThemeForce';
 import authService from './services/authService';
 import householdsService from './services/householdsService';
+import * as serviceWorker from './utils/serviceWorker';
 import inventoryService from './services/inventoryService';
 
 function AppContent() {
@@ -169,6 +172,24 @@ function AppContent() {
   // Alkalmazás inicializálása
   useEffect(() => {
     initializeApp();
+    
+    // Service Worker regisztráció (fejlesztésben kikapcsolva SSL problémák miatt)
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        serviceWorker.register({
+          onSuccess: () => {
+            console.log('PWA: Service Worker regisztrálva és cache-elve offline használatra');
+          },
+          onUpdate: () => {
+            console.log('PWA: Új tartalom elérhető, frissítés szükséges');
+          }
+        });
+      } catch (error) {
+        console.warn('PWA: Service Worker regisztráció sikertelen (SSL hiba):', error);
+      }
+    } else {
+      console.log('PWA: Service Worker regisztráció kihagyva fejlesztési módban');
+    }
     
     // Debug funkciók elérhetővé tétele a console-ból
     window.debugApp = {
@@ -491,6 +512,9 @@ function AppContent() {
           onClose={() => setShowHouseholdManager(false)}
         />
       )}
+      
+      {/* PWA Prompt */}
+      <PWAPrompt />
     </div>
   );
 }

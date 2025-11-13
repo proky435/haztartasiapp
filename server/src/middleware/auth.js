@@ -20,18 +20,15 @@ const authenticateToken = async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Get user from database with household info from household_members
+    // Get user from database with all household memberships
     const userResult = await query(`
       SELECT 
         u.id, 
         u.email, 
         u.name, 
-        u.email_verified,
-        hm.household_id
+        u.email_verified
       FROM users u
-      LEFT JOIN household_members hm ON u.id = hm.user_id
       WHERE u.id = $1
-      LIMIT 1
     `, [decoded.userId]);
     
     if (userResult.rows.length === 0) {
@@ -52,13 +49,31 @@ const authenticateToken = async (req, res, next) => {
       });
     }
     
+    // Get current household from request header or default to first household
+    let currentHouseholdId = req.headers['x-current-household'];
+    
+    if (!currentHouseholdId) {
+      // If no household specified, get the first one the user is member of
+      const householdResult = await query(`
+        SELECT household_id 
+        FROM household_members 
+        WHERE user_id = $1 AND left_at IS NULL
+        ORDER BY joined_at ASC
+        LIMIT 1
+      `, [user.id]);
+      
+      if (householdResult.rows.length > 0) {
+        currentHouseholdId = householdResult.rows[0].household_id;
+      }
+    }
+
     // Add user to request object
     req.user = {
       id: user.id,
       email: user.email,
       name: user.name,
       emailVerified: user.email_verified,
-      household_id: user.household_id
+      household_id: currentHouseholdId
     };
     
     // Set user context for database RLS

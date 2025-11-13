@@ -1,0 +1,308 @@
+.recipe-share-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.recipe-share-modal {
+  background: var(--surface-primary-color);
+  border-radius: 16px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.share-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.share-header h2 {
+  margin: 0;
+  color: var(--text-primary-color);
+  font-size: 1.25rem;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-secondary-color);
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.close-button:hover {
+  background: var(--surface-hover-color);
+  color: var(--text-primary-color);
+}
+
+.share-content {
+  padding: 1.5rem;
+}
+
+.recipe-info {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: var(--surface-secondary-color);
+  border-radius: 12px;
+}
+
+.recipe-info h3 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary-color);
+}
+
+.recipe-info p {
+  margin: 0;
+  color: var(--text-secondary-color);
+  font-size: 0.9rem;
+}
+
+.share-error {
+  background: var(--error-background-color);
+  color: var(--error-color);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--error-color);
+}
+
+.share-disabled,
+.share-enabled {
+  text-align: center;
+}
+
+.share-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.share-disabled h4,
+.share-enabled h4 {
+  margin: 0 0 1rem 0;
+  color: var(--text-primary-color);
+}
+
+.share-disabled p {
+  color: var(--text-secondary-color);
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+.enable-share-button {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-hover-color));
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.enable-share-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+.enable-share-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.share-methods {
+  margin: 2rem 0;
+}
+
+.share-method {
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.share-method label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary-color);
+}
+
+.link-container {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.share-link-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--surface-secondary-color);
+  color: var(--text-primary-color);
+  font-size: 0.9rem;
+  font-family: monospace;
+}
+
+.copy-button {
+  background: var(--success-color);
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.copy-button:hover {
+  background: var(--success-hover-color);
+  transform: translateY(-1px);
+}
+
+.qr-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.qr-code {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.5rem;
+  background: white;
+}
+
+.download-qr-button {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.download-qr-button:hover {
+  background: var(--primary-hover-color);
+  transform: translateY(-1px);
+}
+
+.share-actions {
+  text-align: center;
+  margin: 2rem 0;
+}
+
+.disable-share-button {
+  background: var(--error-color);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.disable-share-button:hover:not(:disabled) {
+  background: var(--error-hover-color);
+  transform: translateY(-1px);
+}
+
+.disable-share-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.share-info {
+  background: var(--surface-secondary-color);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 2rem;
+}
+
+.share-info h4 {
+  margin: 0 0 1rem 0;
+  color: var(--text-primary-color);
+  font-size: 0.95rem;
+}
+
+.share-info ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: var(--text-secondary-color);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.share-info li {
+  margin-bottom: 0.5rem;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .recipe-share-overlay {
+    padding: 0.5rem;
+  }
+  
+  .recipe-share-modal {
+    max-height: 95vh;
+  }
+  
+  .share-header,
+  .share-content {
+    padding: 1rem;
+  }
+  
+  .link-container {
+    flex-direction: column;
+  }
+  
+  .share-link-input {
+    font-size: 0.8rem;
+  }
+  
+  .qr-code {
+    max-width: 150px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .qr-code {
+    background: white;
+  }
+}

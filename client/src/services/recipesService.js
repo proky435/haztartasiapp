@@ -35,6 +35,13 @@ class RecipesService {
       return this.formatRecipeResults(response);
     } catch (error) {
       console.error('Find recipes by ingredients error:', error);
+      
+      // Ha 402 (Payment Required) hibát kapunk, visszaadunk üres listát
+      if (error.message.includes('402')) {
+        console.warn('Spoonacular API kvóta elfogyott. Üres recept lista visszaadása.');
+        return [];
+      }
+      
       throw error;
     }
   }
