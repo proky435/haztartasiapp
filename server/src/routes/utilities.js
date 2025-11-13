@@ -11,6 +11,17 @@ const router = express.Router();
 // =====================================================
 
 const validateUtilityReading = [
+  body('household_id').isUUID().withMessage('Érvényes háztartás ID szükséges'),
+  body('utility_type_id').isUUID().withMessage('Érvényes közműtípus ID szükséges'),
+  body('reading_date').isISO8601().withMessage('Érvényes dátum szükséges (YYYY-MM-DD)'),
+  body('meter_reading').isFloat({ min: 0 }).withMessage('A mérőóra állás nem lehet negatív'),
+  body('unit_price').optional().isFloat({ min: 0 }).withMessage('Az egységár nem lehet negatív'),
+  body('estimated').optional().isBoolean().withMessage('A becsült mező boolean értéket kell tartalmazzon'),
+  body('notes').optional().isString().isLength({ max: 1000 }).withMessage('A megjegyzés maximum 1000 karakter lehet'),
+  body('invoice_number').optional().isString().isLength({ max: 100 }).withMessage('A számla szám maximum 100 karakter lehet')
+];
+
+const validateUtilityReadingUpdate = [
   body('utility_type_id').isUUID().withMessage('Érvényes közműtípus ID szükséges'),
   body('reading_date').isISO8601().withMessage('Érvényes dátum szükséges (YYYY-MM-DD)'),
   body('meter_reading').isFloat({ min: 0 }).withMessage('A mérőóra állás nem lehet negatív'),
@@ -71,6 +82,137 @@ router.get('/types', authenticateToken, async (req, res) => {
 // =====================================================
 // HÁZTARTÁSI KÖZMŰFOGYASZTÁS LEKÉRDEZÉSE
 // =====================================================
+
+/**
+ * GET /api/v1/utilities/household/:householdId
+ * Háztartás közműfogyasztásainak lekérdezése URL paraméterrel
+ */
+router.get('/household/:householdId', authenticateToken, [
+  param('householdId').isUUID().withMessage('Érvényes háztartás ID szükséges'),
+  query('utility_type').optional(),
+  query('date_range').optional()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Érvénytelen paraméterek',
+        errors: errors.array()
+      });
+    }
+
+    const { householdId } = req.params;
+    const { utility_type, date_range } = req.query;
+
+    // Ellenőrizzük a háztartás tagságot
+    const memberCheck = await dbQuery(`
+      SELECT role FROM household_members 
+      WHERE household_id = $1 AND user_id = $2 AND left_at IS NULL
+    `, [householdId, req.user.id]);
+
+    if (memberCheck.rows.length === 0) {
+      return res.status(403).json({
+        success: false,
+        message: 'Nincs jogosultságod ehhez a háztartáshoz'
+      });
+    }
+
+    // Dátum szűrő beállítása
+    let dateFilter = '';
+    const params = [householdId];
+    
+    if (date_range) {
+      const endDate = new Date();
+      const startDate = new Date();
+      
+      switch (date_range) {
+        case '1month':
+          startDate.setMonth(startDate.getMonth() - 1);
+          break;
+        case '3months':
+          startDate.setMonth(startDate.getMonth() - 3);
+          break;
+        case '6months':
+          startDate.setMonth(startDate.getMonth() - 6);
+          break;
+        case '1year':
+          startDate.setFullYear(startDate.getFullYear() - 1);
+          break;
+      }
+      
+      dateFilter = ' AND hu.reading_date >= $' + (params.length + 1);
+      params.push(startDate.toISOString().split('T')[0]);
+    }
+
+    // Közműtípus szűrő
+    let utilityTypeFilter = '';
+    if (utility_type && utility_type !== 'all') {
+      utilityTypeFilter = ' AND ut.name = $' + (params.length + 1);
+      params.push(utility_type);
+    }
+
+    // Mérések lekérdezése
+    const readingsResult = await dbQuery(`
+      SELECT 
+        hu.id,
+        hu.reading_date,
+        hu.meter_reading,
+        hu.previous_reading,
+        hu.consumption,
+        hu.unit_price,
+        hu.cost,
+        hu.estimated,
+        hu.notes,
+        hu.invoice_number,
+        ut.name as utility_type,
+        ut.display_name,
+        ut.unit,
+        u.name as added_by_name
+      FROM household_utilities hu
+      JOIN utility_types ut ON hu.utility_type_id = ut.id
+      LEFT JOIN users u ON hu.added_by_user_id = u.id
+      WHERE hu.household_id = $1 ${dateFilter} ${utilityTypeFilter}
+      ORDER BY hu.reading_date DESC, ut.sort_order
+      LIMIT 100
+    `, params);
+
+    // Statisztikák lekérdezése
+    const statsResult = await dbQuery(`
+      SELECT 
+        ut.id as utility_type_id,
+        ut.name as utility_type,
+        ut.display_name,
+        ut.unit,
+        ut.icon,
+        COUNT(hu.id) as reading_count,
+        SUM(hu.consumption) as total_consumption,
+        SUM(hu.cost) as total_cost,
+        AVG(hu.consumption) as avg_consumption
+      FROM utility_types ut
+      LEFT JOIN household_utilities hu ON ut.id = hu.utility_type_id 
+        AND hu.household_id = $1 ${dateFilter} ${utilityTypeFilter}
+      WHERE ut.is_active = true
+      GROUP BY ut.id, ut.name, ut.display_name, ut.unit, ut.icon, ut.sort_order
+      ORDER BY ut.sort_order
+    `, params);
+
+    res.json({
+      success: true,
+      data: {
+        readings: readingsResult.rows,
+        statistics: statsResult.rows
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching utilities:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Hiba történt a közműadatok lekérdezésekor'
+    });
+  }
+});
 
 /**
  * GET /api/v1/utilities
@@ -328,7 +470,7 @@ router.post('/', authenticateToken, validateUtilityReading, async (req, res) => 
  */
 router.put('/:id', authenticateToken, [
   param('id').isUUID().withMessage('Érvényes ID szükséges'),
-  ...validateUtilityReading
+  ...validateUtilityReadingUpdate
 ], async (req, res) => {
   try {
     const errors = validationResult(req);

@@ -3,6 +3,7 @@ const { body, param, query, validationResult } = require('express-validator');
 const { query: dbQuery, transaction } = require('../database/connection');
 const logger = require('../utils/logger');
 const { authenticateToken } = require('../middleware/auth');
+const utilityCostCalculator = require('../services/utilityCostCalculator');
 
 const router = express.Router();
 
@@ -16,7 +17,12 @@ const validateUtilitySettings = [
   body('current_unit_price').optional().isFloat({ min: 0 }).withMessage('Az egységár nem lehet negatív'),
   body('common_cost').optional().isFloat({ min: 0 }).withMessage('A közös költség nem lehet negatív'),
   body('provider_name').optional().isLength({ max: 100 }).withMessage('A szolgáltató neve maximum 100 karakter'),
+  body('meter_number').optional().isLength({ max: 50 }).withMessage('A mérőszám maximum 50 karakter'),
   body('customer_number').optional().isLength({ max: 50 }).withMessage('Az ügyfélszám maximum 50 karakter'),
+  body('billing_cycle_day').optional().isInt({ min: 1, max: 31 }).withMessage('A számlázási nap 1-31 között lehet'),
+  body('target_monthly_consumption').optional().isFloat({ min: 0 }).withMessage('A célfogyasztás nem lehet negatív'),
+  body('alert_threshold_percent').optional().isInt({ min: 100, max: 200 }).withMessage('A riasztási küszöb 100-200% között lehet'),
+  body('notes').optional().isLength({ max: 1000 }).withMessage('A megjegyzés maximum 1000 karakter'),
   body('auto_calculate_cost').optional().isBoolean().withMessage('Az automatikus számítás boolean értéket kell tartalmazzon'),
   body('is_enabled').optional().isBoolean().withMessage('Az engedélyezés boolean értéket kell tartalmazzon')
 ];
@@ -57,17 +63,17 @@ router.get('/:household_id', authenticateToken, [
       });
     }
 
-    // Beállítások lekérdezése
+    // Beállítások lekérdezése - minden közműtípushoz visszaadunk beállítást
     const result = await dbQuery(`
       SELECT 
         hus.id,
-        hus.utility_type_id,
+        ut.id as utility_type_id,
         ut.name as utility_name,
         ut.display_name,
         ut.unit,
         ut.icon,
         ut.color,
-        hus.is_enabled,
+        COALESCE(hus.is_enabled, true) as is_enabled,
         hus.meter_number,
         hus.base_fee,
         hus.current_unit_price,
@@ -75,16 +81,15 @@ router.get('/:household_id', authenticateToken, [
         hus.billing_cycle_day,
         hus.target_monthly_consumption,
         hus.alert_threshold_percent,
-        hus.auto_calculate_cost,
+        COALESCE(hus.auto_calculate_cost, true) as auto_calculate_cost,
         hus.provider_name,
         hus.customer_number,
         hus.price_valid_from,
         hus.notes,
         hus.created_at,
         hus.updated_at
-      FROM household_utility_settings hus
-      JOIN utility_types ut ON hus.utility_type_id = ut.id
-      WHERE hus.household_id = $1
+      FROM utility_types ut
+      LEFT JOIN household_utility_settings hus ON ut.id = hus.utility_type_id AND hus.household_id = $1
       ORDER BY ut.sort_order
     `, [household_id]);
 
@@ -265,18 +270,15 @@ router.put('/:household_id/:utility_type_id', authenticateToken, [
 
     const { household_id, utility_type_id } = req.params;
 
-    // Ellenőrizzük, hogy létezik-e a beállítás
-    const existingSettings = await dbQuery(`
-      SELECT hus.*, ut.display_name
-      FROM household_utility_settings hus
-      JOIN utility_types ut ON hus.utility_type_id = ut.id
-      WHERE hus.household_id = $1 AND hus.utility_type_id = $2
-    `, [household_id, utility_type_id]);
+    // Ellenőrizzük, hogy létezik-e a utility type
+    const utilityTypeCheck = await dbQuery(`
+      SELECT id, display_name FROM utility_types WHERE id = $1
+    `, [utility_type_id]);
 
-    if (existingSettings.rows.length === 0) {
+    if (utilityTypeCheck.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'A megadott közműbeállítás nem található'
+        message: 'A megadott közműtípus nem található'
       });
     }
 
@@ -345,9 +347,58 @@ router.put('/:household_id/:utility_type_id', authenticateToken, [
 
     const result = await dbQuery(updateQuery, updateValues);
 
+    // Ha nem találtunk sort az UPDATE-tel, akkor hozzuk létre (UPSERT)
+    if (result.rows.length === 0) {
+      logger.info(`Creating new utility setting for household ${household_id}, utility ${utility_type_id}`);
+      
+      const insertQuery = `
+        INSERT INTO household_utility_settings (
+          household_id, 
+          utility_type_id, 
+          is_enabled,
+          base_fee,
+          current_unit_price,
+          provider_name,
+          common_cost,
+          meter_number,
+          billing_cycle_day,
+          target_monthly_consumption,
+          alert_threshold_percent,
+          notes,
+          customer_number,
+          price_valid_from
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_DATE)
+        RETURNING *
+      `;
+      
+      const insertValues = [
+        household_id,
+        utility_type_id,
+        req.body.is_enabled !== undefined ? req.body.is_enabled : true,
+        req.body.base_fee || 0,
+        req.body.current_unit_price || 0,
+        req.body.provider_name || null,
+        req.body.common_cost || 0,
+        req.body.meter_number || null,
+        req.body.billing_cycle_day || 1,
+        req.body.target_monthly_consumption || null,
+        req.body.alert_threshold_percent || 120,
+        req.body.notes || null,
+        req.body.customer_number || null
+      ];
+      
+      const insertResult = await dbQuery(insertQuery, insertValues);
+      
+      return res.json({
+        success: true,
+        message: 'Közműbeállítás sikeresen létrehozva',
+        data: insertResult.rows[0]
+      });
+    }
+
     res.json({
       success: true,
-      message: `${existingSettings.rows[0].display_name} beállítások sikeresen frissítve`,
+      message: 'Közműbeállítások sikeresen frissítve',
       data: result.rows[0]
     });
 
@@ -446,53 +497,31 @@ router.get('/:household_id/calculate/:utility_type_id', authenticateToken, [
     const { household_id, utility_type_id } = req.params;
     const { consumption } = req.query;
 
-    // Beállítások lekérdezése
-    const settings = await dbQuery(`
-      SELECT 
-        hus.base_fee,
-        hus.current_unit_price,
-        hus.common_cost,
-        hus.auto_calculate_cost,
-        ut.display_name,
-        ut.unit
-      FROM household_utility_settings hus
-      JOIN utility_types ut ON hus.utility_type_id = ut.id
-      WHERE hus.household_id = $1 AND hus.utility_type_id = $2 AND hus.is_enabled = TRUE
-    `, [household_id, utility_type_id]);
+    // Ellenőrizzük, hogy a felhasználó tagja-e a háztartásnak
+    const memberCheck = await dbQuery(`
+      SELECT 1 FROM household_members 
+      WHERE household_id = $1 AND user_id = $2
+    `, [household_id, req.user.id]);
 
-    if (settings.rows.length === 0) {
-      return res.status(404).json({
+    if (memberCheck.rows.length === 0) {
+      return res.status(403).json({
         success: false,
-        message: 'Nem található aktív beállítás ehhez a közműhöz'
+        message: 'Nincs jogosultság ehhez a háztartáshoz'
       });
     }
 
-    const setting = settings.rows[0];
     const consumptionAmount = parseFloat(consumption);
 
-    // Költség számítása
-    const baseFee = setting.base_fee || 0;
-    const unitPrice = setting.current_unit_price || 0;
-    const commonCost = setting.common_cost || 0;
-    
-    const consumptionCost = unitPrice * consumptionAmount;
-    const totalCost = baseFee + consumptionCost + commonCost;
+    // Univerzális költségszámítás használata
+    const calculationResult = await utilityCostCalculator.calculateUtilityCost(
+      household_id, 
+      utility_type_id, 
+      consumptionAmount
+    );
 
     res.json({
       success: true,
-      data: {
-        utility_name: setting.display_name,
-        unit: setting.unit,
-        consumption: consumptionAmount,
-        calculation: {
-          base_fee: baseFee,
-          unit_price: unitPrice,
-          consumption_cost: consumptionCost,
-          common_cost: commonCost,
-          total_cost: totalCost
-        },
-        formula: `${baseFee} + (${unitPrice} × ${consumptionAmount}) + ${commonCost} = ${totalCost} Ft`
-      }
+      data: calculationResult
     });
 
   } catch (error) {

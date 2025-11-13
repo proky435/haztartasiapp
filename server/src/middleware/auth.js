@@ -20,11 +20,19 @@ const authenticateToken = async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Get user from database
-    const userResult = await query(
-      'SELECT id, email, name, email_verified FROM users WHERE id = $1',
-      [decoded.userId]
-    );
+    // Get user from database with household info from household_members
+    const userResult = await query(`
+      SELECT 
+        u.id, 
+        u.email, 
+        u.name, 
+        u.email_verified,
+        hm.household_id
+      FROM users u
+      LEFT JOIN household_members hm ON u.id = hm.user_id
+      WHERE u.id = $1
+      LIMIT 1
+    `, [decoded.userId]);
     
     if (userResult.rows.length === 0) {
       logger.logSecurity('INVALID_TOKEN_USER_NOT_FOUND', decoded.userId);
@@ -49,7 +57,8 @@ const authenticateToken = async (req, res, next) => {
       id: user.id,
       email: user.email,
       name: user.name,
-      emailVerified: user.email_verified
+      emailVerified: user.email_verified,
+      household_id: user.household_id
     };
     
     // Set user context for database RLS

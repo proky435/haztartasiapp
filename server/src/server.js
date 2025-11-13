@@ -27,6 +27,9 @@ const shoppingListRoutes = require('./routes/shoppingLists');
 const notificationRoutes = require('./routes/notifications');
 const utilitiesRoutes = require('./routes/utilities');
 const utilitySettingsRoutes = require('./routes/utility-settings');
+const utilityPricingRoutes = require('./routes/utility-pricing');
+const utilityCalculatorRoutes = require('./routes/utility-calculator');
+const householdCostsRoutes = require('./routes/household-costs');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -61,9 +64,14 @@ const corsOptions = {
       ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['X-Total-Count']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['X-Total-Count'],
+  optionsSuccessStatus: 200, // Some legacy browsers choke on 204
+  preflightContinue: false
 };
+
+// Enable pre-flight for all routes
+app.options('*', cors(corsOptions));
 app.use(cors(corsOptions));
 
 // Rate limiting
@@ -110,6 +118,7 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // Session configuration
+ /* 
 app.use(session({
   store: redisClient ? new RedisStore({ client: redisClient }) : undefined,
   secret: process.env.SESSION_SECRET || 'fallback-secret-key',
@@ -119,6 +128,25 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  },
+}));
+*/
+// haztartasiapp/server/src/server.js - JAVÍTOTT BLOKK
+app.use(session({
+  store: redisClient ? new RedisStore({ client: redisClient }) : undefined,
+  secret: process.env.SESSION_SECRET || 'fallback-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    // KÖTELEZŐ IGAZ-ra állítani, mert HTTPS-t használsz,
+    // függetlenül attól, hogy dev vagy prod.
+    secure: true, 
+    
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 óra
+    
+    // KÖTELEZŐ a cross-origin (:3000 -> :3001) kérésekhez
+    sameSite: 'none' 
   },
 }));
 
@@ -149,6 +177,9 @@ apiRouter.use('/shopping-lists', shoppingListRoutes);
 apiRouter.use('/notifications', notificationRoutes);
 apiRouter.use('/utilities', utilitiesRoutes);
 apiRouter.use('/utility-settings', utilitySettingsRoutes);
+apiRouter.use('/utility-pricing', utilityPricingRoutes);
+apiRouter.use('/utility-calculator', utilityCalculatorRoutes);
+apiRouter.use('/household-costs', householdCostsRoutes);
 
 app.use(`/api/${process.env.API_VERSION || 'v1'}`, apiRouter);
 

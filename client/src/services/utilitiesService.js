@@ -23,6 +23,29 @@ class UtilitiesService {
     }
   }
 
+  /**
+   * Közműmérések lekérdezése
+   * @param {string} householdId - Háztartás ID
+   * @param {Object} filters - Szűrők (utility_type, date_range)
+   * @returns {Promise<Object>} Mérések és statisztikák
+   */
+  async getUtilityReadings(householdId, filters = {}) {
+    try {
+      const params = new URLSearchParams();
+      if (filters.utility_type) params.append('utility_type', filters.utility_type);
+      if (filters.date_range) params.append('date_range', filters.date_range);
+      
+      const queryString = params.toString();
+      const url = `/utilities/household/${householdId}${queryString ? `?${queryString}` : ''}`;
+      
+      const response = await apiService.get(url);
+      return response.data || response;
+    } catch (error) {
+      console.error('Error fetching utility readings:', error);
+      throw new Error(error.message || 'Hiba történt a közműmérések lekérdezésekor');
+    }
+  }
+
   // =====================================================
   // KÖZMŰFOGYASZTÁS LEKÉRDEZÉSE
   // =====================================================
@@ -126,7 +149,8 @@ class UtilitiesService {
   async getUtilitySettings(householdId) {
     try {
       const response = await apiService.get(`/utility-settings/${householdId}`);
-      return response.data;
+      // A backend success/data formátumban küldi a választ
+      return response.data || response;
     } catch (error) {
       console.error('Error fetching utility settings:', error);
       throw new Error(error.message || 'Hiba történt a beállítások betöltésekor');
@@ -183,7 +207,7 @@ class UtilitiesService {
   }
 
   /**
-   * Költségkalkulátor - adott fogyasztásra számított költség
+   * Költségkalkulátor - adott fogyasztásra számított költség (sávos árazással)
    * @param {string} householdId - Háztartás ID
    * @param {string} utilityTypeId - Közműtípus ID
    * @param {number} consumption - Fogyasztás mennyisége
@@ -199,40 +223,166 @@ class UtilitiesService {
     }
   }
 
+  /**
+   * Árazási sávok lekérdezése
+   * @param {string} householdId - Háztartás ID
+   * @param {string} utilityTypeId - Közműtípus ID
+   * @returns {Promise<Object>} Árazási sávok
+   */
+  async getPricingTiers(householdId, utilityTypeId) {
+    try {
+      const response = await apiService.get(`/utility-pricing/${householdId}/${utilityTypeId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching pricing tiers:', error);
+      throw new Error(error.message || 'Hiba történt az árazási sávok betöltésekor');
+    }
+  }
+
+  /**
+   * Alapértelmezett árazási sávok visszaállítása
+   * @param {string} householdId - Háztartás ID
+   * @param {string} utilityTypeId - Közműtípus ID
+   * @returns {Promise<Object>} Visszaállítás eredménye
+   */
+  async resetDefaultPricingTiers(householdId, utilityTypeId) {
+    try {
+      const response = await apiService.post(`/utility-pricing/${householdId}/${utilityTypeId}/reset-defaults`);
+      return response.data;
+    } catch (error) {
+      console.error('Error resetting default pricing tiers:', error);
+      throw new Error(error.message || 'Hiba történt az alapértelmezett sávok visszaállításakor');
+    }
+  }
+
+  /**
+   * Árazási sáv mentése/frissítése
+   * @param {string} householdId - Háztartás ID
+   * @param {string} utilityTypeId - Közműtípus ID
+   * @param {Object} tierData - Sáv adatok
+   * @returns {Promise<Object>} Mentés eredménye
+   */
+  async savePricingTier(householdId, utilityTypeId, tierData) {
+    try {
+      const response = await apiService.post(`/utility-pricing/${householdId}/${utilityTypeId}`, tierData);
+      return response.data;
+    } catch (error) {
+      console.error('Error saving pricing tier:', error);
+      throw new Error(error.message || 'Hiba történt az árazási sáv mentésekor');
+    }
+  }
+
+  /**
+   * Árazási sáv törlése
+   * @param {string} householdId - Háztartás ID
+   * @param {string} utilityTypeId - Közműtípus ID
+   * @param {number} tierNumber - Sáv száma
+   * @returns {Promise<Object>} Törlés eredménye
+   */
+  async deletePricingTier(householdId, utilityTypeId, tierNumber) {
+    try {
+      const response = await apiService.delete(`/utility-pricing/${householdId}/${utilityTypeId}/${tierNumber}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting pricing tier:', error);
+      throw new Error(error.message || 'Hiba történt az árazási sáv törlésekor');
+    }
+  }
+
+  // =====================================================
+  // HÁZTARTÁSI KÖZÖS KÖLTSÉGEK
+  // =====================================================
+
+  /**
+   * Háztartási közös költségek lekérdezése
+   * @param {string} householdId - Háztartás ID
+   * @returns {Promise<Object>} Közös költségek adatok
+   */
+  async getHouseholdCosts(householdId) {
+    try {
+      const response = await apiService.get(`/household-costs/${householdId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching household costs:', error);
+      throw new Error(error.message || 'Hiba történt a háztartási költségek lekérdezésekor');
+    }
+  }
+
+  /**
+   * Háztartási közös költségek frissítése
+   * @param {string} householdId - Háztartás ID
+   * @param {Object} costsData - Költségek adatok
+   * @returns {Promise<Object>} Frissítés eredménye
+   */
+  async updateHouseholdCosts(householdId, costsData) {
+    try {
+      const response = await apiService.put(`/household-costs/${householdId}`, costsData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating household costs:', error);
+      throw new Error(error.message || 'Hiba történt a háztartási költségek frissítésekor');
+    }
+  }
+
+  /**
+   * Háztartási közös költségek visszaállítása
+   * @param {string} householdId - Háztartás ID
+   * @returns {Promise<Object>} Visszaállítás eredménye
+   */
+  async resetHouseholdCosts(householdId) {
+    try {
+      const response = await apiService.delete(`/household-costs/${householdId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error resetting household costs:', error);
+      throw new Error(error.message || 'Hiba történt a háztartási költségek visszaállításakor');
+    }
+  }
+
   // =====================================================
   // SEGÉDFÜGGVÉNYEK
   // =====================================================
 
   /**
-   * Fogyasztás formázása megjelenítéshez
-   * @param {number} consumption - Fogyasztás értéke
+   * Fogyasztás formázása
+   * @param {number|string} consumption - Fogyasztás értéke
    * @param {string} unit - Mértékegység
    * @returns {string} Formázott fogyasztás
    */
   formatConsumption(consumption, unit) {
-    if (!consumption || consumption === 0) return '0 ' + unit;
+    // Típuskonverzió és validálás
+    const numConsumption = parseFloat(consumption);
     
-    if (consumption < 1) {
-      return `${(consumption * 1000).toFixed(0)} ${unit === 'm³' ? 'liter' : 'Wh'}`;
+    if (!numConsumption || numConsumption === 0 || isNaN(numConsumption)) {
+      return '0 ' + unit;
     }
     
-    return `${consumption.toFixed(2)} ${unit}`;
+    if (numConsumption < 1) {
+      return `${(numConsumption * 1000).toFixed(0)} ${unit === 'm³' ? 'liter' : 'Wh'}`;
+    }
+    
+    return `${numConsumption.toFixed(2)} ${unit}`;
   }
 
   /**
    * Költség formázása
-   * @param {number} cost - Költség Ft-ban
+   * @param {number|string} cost - Költség Ft-ban
    * @returns {string} Formázott költség
    */
   formatCost(cost) {
-    if (!cost || cost === 0) return '0 Ft';
+    // Típuskonverzió és validálás
+    const numCost = parseFloat(cost);
+    
+    if (!numCost || numCost === 0 || isNaN(numCost)) {
+      return '0 Ft';
+    }
     
     return new Intl.NumberFormat('hu-HU', {
       style: 'currency',
       currency: 'HUF',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    }).format(cost);
+    }).format(numCost);
   }
 
   /**

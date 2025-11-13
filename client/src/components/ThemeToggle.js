@@ -1,30 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import './ThemeToggle.css';
 
-function ThemeToggle() {
-  const { theme, toggleTheme, setLightTheme, setDarkTheme, setSystemTheme } = useTheme();
-  const [showOptions, setShowOptions] = useState(false);
+function ThemeToggle({ onSettingsClick }) {
+  const { theme, toggleTheme } = useTheme();
 
   const handleQuickToggle = () => {
     toggleTheme();
-  };
-
-  const handleOptionSelect = (option) => {
-    switch (option) {
-      case 'light':
-        setLightTheme();
-        break;
-      case 'dark':
-        setDarkTheme();
-        break;
-      case 'system':
-        setSystemTheme();
-        break;
-      default:
-        break;
-    }
-    setShowOptions(false);
   };
 
   const getThemeIcon = () => {
@@ -49,51 +31,15 @@ function ThemeToggle() {
         <span className="theme-icon">{getThemeIcon()}</span>
       </button>
 
-      {/* Részletes opciók gomb */}
+      {/* Általános beállítások gomb */}
       <button 
-        className="theme-options-button"
-        onClick={() => setShowOptions(!showOptions)}
-        title="Téma beállítások"
+        className="settings-button"
+        onClick={onSettingsClick}
+        title="Beállítások"
       >
-        <span className="options-icon">⚙️</span>
+        <span className="settings-icon">⚙️</span>
       </button>
 
-      {/* Opciók dropdown */}
-      {showOptions && (
-        <div className="theme-options-dropdown">
-          <div className="theme-options-header">
-            <h4>Téma Beállítások</h4>
-          </div>
-          
-          <div className="theme-options-list">
-            <button 
-              className={`theme-option ${theme === 'light' ? 'active' : ''}`}
-              onClick={() => handleOptionSelect('light')}
-            >
-              <span className="option-icon">☀️</span>
-              <span className="option-text">Világos</span>
-              {theme === 'light' && <span className="check-mark">✓</span>}
-            </button>
-            
-            <button 
-              className={`theme-option ${theme === 'dark' ? 'active' : ''}`}
-              onClick={() => handleOptionSelect('dark')}
-            >
-              <span className="option-icon">🌙</span>
-              <span className="option-text">Sötét</span>
-              {theme === 'dark' && <span className="check-mark">✓</span>}
-            </button>
-            
-            <button 
-              className="theme-option"
-              onClick={() => handleOptionSelect('system')}
-            >
-              <span className="option-icon">🖥️</span>
-              <span className="option-text">Rendszer</span>
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

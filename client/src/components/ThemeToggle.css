@@ -6,7 +6,8 @@
 }
 
 .theme-toggle-button,
-.theme-options-button {
+.theme-options-button,
+.settings-button {
   background: var(--surface-color);
   border: 1px solid var(--border-color);
   border-radius: 8px;
@@ -21,7 +22,8 @@
 }
 
 .theme-toggle-button:hover,
-.theme-options-button:hover {
+.theme-options-button:hover,
+.settings-button:hover {
   background: var(--surface-hover-color);
   border-color: var(--primary-color);
   transform: translateY(-1px);
@@ -29,13 +31,15 @@
 }
 
 .theme-icon,
-.options-icon {
+.options-icon,
+.settings-icon {
   font-size: 1.2rem;
   transition: transform 0.2s ease;
 }
 
 .theme-toggle-button:hover .theme-icon,
-.theme-options-button:hover .options-icon {
+.theme-options-button:hover .options-icon,
+.settings-button:hover .settings-icon {
   transform: scale(1.1);
 }
 
@@ -133,7 +137,8 @@
   }
   
   .theme-toggle-button,
-  .theme-options-button {
+  .theme-options-button,
+  .settings-button {
     min-width: 36px;
     height: 36px;
     padding: 0.4rem;

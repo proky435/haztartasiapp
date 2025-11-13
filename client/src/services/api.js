@@ -25,7 +25,11 @@ class ApiService {
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
     const token = this.getToken();
+    
+    // Debug üzenetek kikapcsolva
+    // console.log('API Request:', url);
 
+     /* 
     const config = {
       headers: {
         'Content-Type': 'application/json',
@@ -38,7 +42,28 @@ class ApiService {
       }),
       ...options,
     };
+*/
 
+const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+        ...options.headers,
+      },
+      
+      // JAVÍTÁS: Add hozzá ezt a sort
+      credentials: 'include', // Sütik küldése cross-origin kéréseknél
+
+      ...(process.env.NODE_ENV === 'development' && {
+        // ...
+      }),
+      ...options,
+    };
+
+    // Debug headers kikapcsolva
+    // console.log('Headers:', config.headers);
+
+    
     if (config.body && typeof config.body === 'object') {
       config.body = JSON.stringify(config.body);
     }
@@ -64,6 +89,13 @@ class ApiService {
       return this.handleResponse(response);
     } catch (error) {
       console.error('API Request Error:', error);
+      
+      // SSL tanúsítvány hiba kezelése
+      if (error.message.includes('net::ERR_CERT') || error.message.includes('SSL')) {
+        console.warn('SSL tanúsítvány hiba. Kérjük látogassa meg: https://192.168.0.19:3001/health és fogadja el a tanúsítványt!');
+        throw new Error('SSL tanúsítvány hiba. Kérjük fogadja el a backend tanúsítványát a böngészőben!');
+      }
+      
       throw error;
     }
   }

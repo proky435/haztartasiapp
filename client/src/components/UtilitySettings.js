@@ -1,23 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import './UtilitySettings.css';
 import utilitiesService from '../services/utilitiesService';
-import LoadingSpinner from './LoadingSpinner';
+import './UtilitySettings.css';
 
-const UtilitySettings = ({ currentHousehold }) => {
-  // State kezelés
+const UtilitySettings = ({ 
+  currentHousehold, 
+  showPricingModal, 
+  setShowPricingModal,
+  editingUtility,
+  setEditingUtility,
+  showCalculator,
+  setShowCalculator,
+  onDataUpdate
+}) => {
+  // Debug üzenet eltávolítva - infinite loop javítva
+  // console.log('🚨 KOMPONENS RENDER - currentHousehold:', currentHousehold?.id, 'Timestamp:', Date.now());
+  
+  // State változók
   const [settings, setSettings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [editingUtility, setEditingUtility] = useState(null);
-  const [showCalculator, setShowCalculator] = useState(null);
+  // editingUtility és showCalculator most prop-ként jönnek a parent-től
   const [calculatorConsumption, setCalculatorConsumption] = useState('');
   const [calculatorResult, setCalculatorResult] = useState(null);
-
-  // Form adatok
+  const [householdCosts, setHouseholdCosts] = useState({
+    common_utility_cost: 0,
+    maintenance_cost: 0,
+    other_monthly_costs: 0,
+    rent_amount: 0,
+    garage_rent: 0,
+    insurance_cost: 0
+  });
+  const [editingHouseholdCosts, setEditingHouseholdCosts] = useState(false);
+  const [editingRentCosts, setEditingRentCosts] = useState(false);
+  const [pricingTiers, setPricingTiers] = useState({});
+  const [showPricingEditor, setShowPricingEditor] = useState(null);
+  // showPricingModal most prop-ként jön a parent-től
+  const [editingTiers, setEditingTiers] = useState([]);
+  const [newTier, setNewTier] = useState({
+    tier_name: '',
+    price_per_unit: '',
+    limit_value: '',
+    system_usage_fee: '',
+    conversion_factor: '',
+    conversion_unit: ''
+  });
   const [formData, setFormData] = useState({
     base_fee: '',
     current_unit_price: '',
-    common_cost: '',
     provider_name: '',
     customer_number: '',
     meter_number: '',
@@ -25,162 +54,489 @@ const UtilitySettings = ({ currentHousehold }) => {
     is_enabled: true
   });
 
-  // Komponens inicializálása
-  useEffect(() => {
-    if (currentHousehold) {
-      loadSettings();
-    }
-  }, [currentHousehold]);
+  // useEffect-et a függvények deklarálása után helyezzük el
 
-  // Beállítások betöltése
-  const loadSettings = async () => {
+  // Háztartási költségek betöltése
+  const loadHouseholdCosts = async () => {
+    try {
+      console.log('📥 Loading household costs for household:', currentHousehold.id);
+      const response = await utilitiesService.getHouseholdCosts(currentHousehold.id);
+      console.log('📥 Raw API response:', response);
+      
+      const data = response?.data || response || {};
+      console.log('📥 Extracted data:', data);
+      
+      const newHouseholdCosts = {
+        common_utility_cost: data.common_utility_cost || 0,
+        maintenance_cost: data.maintenance_cost || 0,
+        other_monthly_costs: data.other_monthly_costs || 0,
+        rent_amount: data.rent_amount || 0,
+        garage_rent: data.garage_rent || 0,
+        insurance_cost: data.insurance_cost || 0
+      };
+      
+      console.log('📥 Setting new household costs:', newHouseholdCosts);
+      setHouseholdCosts(newHouseholdCosts);
+      
+    } catch (err) {
+      console.error('Error loading household costs:', err);
+      // Alapértelmezett értékek beállítása hiba esetén
+      setHouseholdCosts({
+        common_utility_cost: 0,
+        maintenance_cost: 0,
+        other_monthly_costs: 0,
+        rent_amount: 0,
+        garage_rent: 0,
+        insurance_cost: 0
+      });
+    }
+  };
+
+  // Háztartási költségek mentése
+  const handleSaveHouseholdCosts = async () => {
     try {
       setLoading(true);
       setError(null);
+
+      await utilitiesService.updateHouseholdCosts(currentHousehold.id, householdCosts);
       
-      const data = await utilitiesService.getUtilitySettings(currentHousehold.id);
-      setSettings(data);
+      // Adatok újratöltése a mentés után
+      console.log('🔄 Reloading household costs after household save...');
+      await loadHouseholdCosts();
       
+      // Parent komponens adatfrissítése
+      if (onDataUpdate) {
+        onDataUpdate();
+      }
+      
+      setEditingHouseholdCosts(false);
+      
+      // Sikeres mentés jelzése
+      setError({ type: 'success', message: 'Háztartási közös költségek sikeresen mentve!' });
+      setTimeout(() => setError(null), 3000);
+
     } catch (err) {
-      console.error('Error loading utility settings:', err);
-      setError(err.message);
+      console.error('Error saving household costs:', err);
+      setError({ type: 'error', message: err.message });
     } finally {
       setLoading(false);
     }
   };
 
-  // Form kezelés
-  const handleFormChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  // Lakbér költségek mentése
+  const handleSaveRentCosts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      console.log('💰 Saving rent costs:', householdCosts);
+      await utilitiesService.updateHouseholdCosts(currentHousehold.id, householdCosts);
+      
+      // Adatok újratöltése a mentés után
+      console.log('🔄 Reloading household costs after rent save...');
+      await loadHouseholdCosts();
+      
+      // Parent komponens adatfrissítése
+      if (onDataUpdate) {
+        onDataUpdate();
+      }
+      
+      setEditingRentCosts(false);
+      
+      // Sikeres mentés jelzése
+      setError({ type: 'success', message: 'Lakbér beállítások sikeresen mentve!' });
+      setTimeout(() => setError(null), 3000);
+
+    } catch (err) {
+      console.error('Error saving rent costs:', err);
+      setError({ type: 'error', message: err.message });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const resetForm = () => {
-    setFormData({
-      base_fee: '',
-      current_unit_price: '',
-      common_cost: '',
-      provider_name: '',
-      customer_number: '',
-      meter_number: '',
-      auto_calculate_cost: true,
-      is_enabled: true
-    });
-  };
-
-  // Szerkesztés indítása
+  // Közmű szerkesztése
   const handleEditUtility = (setting) => {
     setEditingUtility(setting);
     setFormData({
-      base_fee: setting.base_fee?.toString() || '',
-      current_unit_price: setting.current_unit_price?.toString() || '',
-      common_cost: setting.common_cost?.toString() || '',
+      base_fee: setting.base_fee || 0,
+      current_unit_price: setting.current_unit_price || 0,
       provider_name: setting.provider_name || '',
-      customer_number: setting.customer_number || '',
-      meter_number: setting.meter_number || '',
-      auto_calculate_cost: setting.auto_calculate_cost ?? true,
-      is_enabled: setting.is_enabled ?? true
+      is_enabled: setting.is_enabled || false
     });
   };
 
-  // Beállítások mentése
-  const handleSaveSettings = async (e) => {
-    e.preventDefault();
-    
-    try {
-      setLoading(true);
-      
-      const settingsData = {
-        utility_type_id: editingUtility.utility_type_id,
-        base_fee: formData.base_fee ? parseFloat(formData.base_fee) : 0,
-        current_unit_price: formData.current_unit_price ? parseFloat(formData.current_unit_price) : null,
-        common_cost: formData.common_cost ? parseFloat(formData.common_cost) : 0,
-        provider_name: formData.provider_name || null,
-        customer_number: formData.customer_number || null,
-        meter_number: formData.meter_number || null,
-        auto_calculate_cost: formData.auto_calculate_cost,
-        is_enabled: formData.is_enabled
-      };
+  // Képlet generálás közműtípus alapján
+  const getUtilityFormula = (setting) => {
+    const utilityType = setting.utility_type_name?.toLowerCase() || '';
+    const baseFee = setting.base_fee || 0;
+    const unitPrice = setting.current_unit_price || 0;
+    const unit = setting.unit || '';
 
-      if (editingUtility.id) {
-        // Frissítés
-        await utilitiesService.updateUtilitySettings(
-          currentHousehold.id, 
-          editingUtility.utility_type_id, 
-          settingsData
-        );
-      } else {
-        // Új létrehozása
-        await utilitiesService.saveUtilitySettings(currentHousehold.id, settingsData);
-      }
-      
-      setEditingUtility(null);
-      resetForm();
-      await loadSettings();
-      
-    } catch (err) {
-      console.error('Error saving settings:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Közműtípus specifikus képletek
+    switch (utilityType) {
+      case 'villany':
+      case 'elektromos áram':
+        if (unitPrice > 0) {
+          return `${baseFee} + (sávos árazás: 0-210 kWh: 36 Ft/kWh, 210+ kWh: 70 Ft/kWh) + rendszerhasználati díj`;
+        }
+        return `${baseFee} + (sávos árazás beállítása szükséges)`;
 
-  // Kalkulátor használata
-  const handleCalculate = async (utilityTypeId) => {
-    if (!calculatorConsumption || calculatorConsumption <= 0) {
-      setError('Kérjük, adjon meg egy érvényes fogyasztási értéket');
-      return;
-    }
+      case 'gáz':
+      case 'földgáz':
+        if (unitPrice > 0) {
+          return `${baseFee} + (sávos árazás: 0-1729 m³: 102 Ft/m³, 1729+ m³: 747 Ft/m³)`;
+        }
+        return `${baseFee} + (sávos árazás beállítása szükséges)`;
 
-    try {
-      const result = await utilitiesService.calculateUtilityCost(
-        currentHousehold.id,
-        utilityTypeId,
-        parseFloat(calculatorConsumption)
-      );
-      setCalculatorResult(result);
-    } catch (err) {
-      console.error('Error calculating cost:', err);
-      setError(err.message);
+      case 'víz':
+      case 'hideg víz':
+        if (unitPrice > 0) {
+          return `${baseFee} + (${unitPrice} Ft/${unit} × fogyasztás) + szennyvízdíj`;
+        }
+        return `${baseFee} + (egységár beállítása szükséges)`;
+
+      case 'meleg víz':
+      case 'melegvíz':
+        if (unitPrice > 0) {
+          return `${baseFee} + (${unitPrice} Ft/${unit} × fogyasztás) + fűtési költség`;
+        }
+        return `${baseFee} + (egységár beállítása szükséges)`;
+
+      case 'távfűtés':
+      case 'fűtés':
+        if (unitPrice > 0) {
+          return `${baseFee} + (${unitPrice} Ft/GJ × fogyasztás) + alapdíj`;
+        }
+        return `${baseFee} + (GJ alapú számítás beállítása szükséges)`;
+
+      case 'szennyvíz':
+        if (unitPrice > 0) {
+          return `Hideg víz fogyasztás × ${unitPrice} Ft/${unit} (víz alapú számítás)`;
+        }
+        return `Víz fogyasztás alapú számítás (beállítás szükséges)`;
+
+      default:
+        if (unitPrice > 0) {
+          return `${baseFee} + (${unitPrice} Ft/${unit} × fogyasztás)`;
+        }
+        return `${baseFee} + (egységár beállítása szükséges)`;
     }
   };
 
   // Modal bezárása
   const handleCloseModal = () => {
+    console.log('🚨🚨🚨 handleCloseModal HÍVVA! Stack trace:');
+    console.trace();
+    console.log('🚨🚨🚨 VALAKI BEZÁRJA A MODALT!');
     setEditingUtility(null);
+    setShowPricingModal(null);
+    setShowPricingEditor(null);
     setShowCalculator(null);
-    setCalculatorResult(null);
-    setCalculatorConsumption('');
-    resetForm();
+    setFormData({});
   };
 
-  if (loading && settings.length === 0) {
-    return <LoadingSpinner />;
+  // Beállítások mentése
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      setError(null);
+
+      await utilitiesService.updateUtilitySettings(
+        currentHousehold.id,
+        editingUtility.utility_type_id,
+        formData
+      );
+
+      setError({ type: 'success', message: 'Beállítások sikeresen mentve!' });
+      setTimeout(() => setError(null), 3000);
+      
+      handleCloseModal();
+      await loadSettings();
+      
+    } catch (err) {
+      console.error('Error saving settings:', err);
+      setError({ type: 'error', message: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Form változás kezelése
+  const handleFormChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: field === 'is_enabled' ? value : (parseFloat(value) || value)
+    }));
+  };
+
+  // Beállítások betöltése
+  const loadSettings = async () => {
+    try {
+      setLoading(true);
+      
+      // Token ellenőrzés
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('Nincs bejelentkezve! Kérjük jelentkezzen be újra.');
+      }
+      
+      const response = await utilitiesService.getUtilitySettings(currentHousehold.id);
+      setSettings(response || []);
+    } catch (err) {
+      console.error('❌ Error loading settings:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Komponens inicializálása - a függvények deklarálása után
+  useEffect(() => {
+    if (currentHousehold?.id) {
+      loadSettings();
+      loadHouseholdCosts();
+    }
+  }, [currentHousehold?.id]); // JAVÍTÁS: Csak a currentHousehold.id-t figyeljük
+
+  // Debug useEffect-ek eltávolítva
+
+  if (loading) {
+    return <div className="loading">Beállítások betöltése...</div>;
+  }
+
+  // Token ellenőrzés
+  const token = localStorage.getItem('accessToken');
+  if (!token) {
+    return (
+      <div className="utility-settings">
+        <div className="error-message">
+          <span>⚠️ Nincs bejelentkezve! Kérjük jelentkezzen be újra.</span>
+          <button 
+            onClick={() => {
+              // Átirányítás a bejelentkezés oldalra
+              window.location.href = '/login';
+            }}
+            style={{marginLeft: '10px', padding: '5px 10px'}}
+          >
+            Bejelentkezés
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Token lejárat ellenőrzés
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.exp * 1000 < Date.now()) {
+        return (
+          <div className="utility-settings">
+            <div className="error-message">
+              <span>⚠️ A token lejárt! Kérjük jelentkezzen be újra.</span>
+              <button 
+                onClick={() => {
+                  localStorage.removeItem('accessToken');
+                  window.location.href = '/login';
+                }}
+                style={{marginLeft: '10px', padding: '5px 10px'}}
+              >
+                Újra bejelentkezés
+              </button>
+            </div>
+          </div>
+        );
+      }
+    } catch (e) {
+      console.error('Token validációs hiba:', e);
+    }
   }
 
   return (
-    <div className="utility-settings-container">
-      {/* Header */}
-      <div className="settings-header">
-        <div className="header-left">
-          <h2>⚙️ Közműbeállítások</h2>
-          <p>Háztartás: {currentHousehold?.name}</p>
-          <p className="subtitle">Árbeállítások és költségszámítás kezelése</p>
-        </div>
-      </div>
-
+    <div className="utility-settings">
+      {/* Modal most a parent komponensben van */}
+      
       {/* Hiba megjelenítése */}
       {error && (
-        <div className="error-message">
-          <span>⚠️ {error}</span>
+        <div className={`error-message ${error.type === 'success' ? 'success-message' : ''}`}>
+          <span>
+            {error.type === 'success' ? '✅' : '⚠️'} 
+            {typeof error === 'string' ? error : error.message}
+          </span>
           <button onClick={() => setError(null)}>✕</button>
         </div>
       )}
 
-      {/* Beállítások listája */}
+      {/* Háztartási közös költségek */}
+      <div className="household-costs-section">
+        <div className="section-header">
+          <h3>🏠 Háztartási közös költségek</h3>
+          <button 
+            className="edit-household-costs-btn"
+            onClick={editingHouseholdCosts ? handleSaveHouseholdCosts : () => setEditingHouseholdCosts(true)}
+            disabled={loading}
+          >
+            {editingHouseholdCosts ? '💾 Mentés' : '✏️ Szerkesztés'}
+          </button>
+        </div>
+        
+        <div className="household-costs-grid">
+          <div className="cost-item">
+            <label>Közös közműköltség (Ft/hó)</label>
+            {editingHouseholdCosts ? (
+              <input 
+                type="number"
+                step="0.01"
+                value={householdCosts.common_utility_cost}
+                onChange={(e) => setHouseholdCosts(prev => ({
+                  ...prev,
+                  common_utility_cost: parseFloat(e.target.value) || 0
+                }))}
+                placeholder="pl. 5000"
+              />
+            ) : (
+              <span className="cost-display">
+                {utilitiesService.formatCost(householdCosts.common_utility_cost)}/hó
+              </span>
+            )}
+            <small>Társasházi közös fogyasztás</small>
+          </div>
+          
+          <div className="cost-item">
+            <label>Karbantartási költség (Ft/hó)</label>
+            {editingHouseholdCosts ? (
+              <input 
+                type="number"
+                step="0.01"
+                value={householdCosts.maintenance_cost}
+                onChange={(e) => setHouseholdCosts(prev => ({
+                  ...prev,
+                  maintenance_cost: parseFloat(e.target.value) || 0
+                }))}
+                placeholder="pl. 3000"
+              />
+            ) : (
+              <span className="cost-display">
+                {utilitiesService.formatCost(householdCosts.maintenance_cost)}/hó
+              </span>
+            )}
+            <small>Lift, takarítás, karbantartás</small>
+          </div>
+          
+          <div className="cost-item">
+            <label>Egyéb havi költség (Ft/hó)</label>
+            {editingHouseholdCosts ? (
+              <input 
+                type="number"
+                step="0.01"
+                value={householdCosts.other_monthly_costs}
+                onChange={(e) => setHouseholdCosts(prev => ({
+                  ...prev,
+                  other_monthly_costs: parseFloat(e.target.value) || 0
+                }))}
+                placeholder="pl. 1000"
+              />
+            ) : (
+              <span className="cost-display">
+                {utilitiesService.formatCost(householdCosts.other_monthly_costs)}/hó
+              </span>
+            )}
+            <small>Egyéb közös költségek</small>
+          </div>
+        </div>
+        
+        <div className="total-household-costs">
+          <strong>Összes havi közös költség: {utilitiesService.formatCost(
+            householdCosts.common_utility_cost + 
+            householdCosts.maintenance_cost + 
+            householdCosts.other_monthly_costs
+          )}</strong>
+        </div>
+      </div>
+
+      {/* Lakbér beállítások */}
+      <div className="household-costs-section">
+        <div className="section-header">
+          <h3>🏠 Lakbér beállítások</h3>
+          <button 
+            className="edit-household-costs-btn"
+            onClick={editingRentCosts ? handleSaveRentCosts : () => {
+              console.log('🏠 Starting rent costs editing');
+              setEditingRentCosts(true);
+            }}
+            disabled={loading}
+          >
+            {editingRentCosts ? '💾 Mentés' : '✏️ Szerkesztés'}
+          </button>
+        </div>
+        
+        <div className="cost-item">
+          <label>Lakbér (Ft/hó)</label>
+          {editingRentCosts ? (
+            <input 
+              type="number"
+              step="0.01"
+              value={householdCosts.rent_amount}
+              onChange={(e) => setHouseholdCosts(prev => ({
+                ...prev,
+                rent_amount: parseFloat(e.target.value) || 0
+              }))}
+              placeholder="pl. 150000"
+            />
+          ) : (
+            <span className="cost-display">
+              {utilitiesService.formatCost(householdCosts.rent_amount)}/hó
+            </span>
+          )}
+          <small>Havi lakbér összege</small>
+        </div>
+        
+        <div className="cost-item">
+          <label>Garázs bérlet (Ft/hó)</label>
+          {editingRentCosts ? (
+            <input 
+              type="number"
+              step="0.01"
+              value={householdCosts.garage_rent}
+              onChange={(e) => setHouseholdCosts(prev => ({
+                ...prev,
+                garage_rent: parseFloat(e.target.value) || 0
+              }))}
+              placeholder="pl. 15000"
+            />
+          ) : (
+            <span className="cost-display">
+              {utilitiesService.formatCost(householdCosts.garage_rent)}/hó
+            </span>
+          )}
+          <small>Havi garázs bérleti díj</small>
+        </div>
+        
+        <div className="cost-item">
+          <label>Biztosítás (Ft/hó)</label>
+          {editingRentCosts ? (
+            <input 
+              type="number"
+              step="0.01"
+              value={householdCosts.insurance_cost}
+              onChange={(e) => setHouseholdCosts(prev => ({
+                ...prev,
+                insurance_cost: parseFloat(e.target.value) || 0
+              }))}
+              placeholder="pl. 8000"
+            />
+          ) : (
+            <span className="cost-display">
+              {utilitiesService.formatCost(householdCosts.insurance_cost)}/hó
+            </span>
+          )}
+          <small>Havi biztosítási díj</small>
+        </div>
+      </div>
+
+      {/* Egyedi közműbeállítások */}
       <div className="settings-grid">
         {settings.map(setting => (
           <div key={setting.utility_type_id} className={`setting-card ${!setting.is_enabled ? 'disabled' : ''}`}>
@@ -220,12 +576,6 @@ const UtilitySettings = ({ currentHousehold }) => {
                     }
                   </span>
                 </div>
-                <div className="price-item">
-                  <span className="price-label">Közös költség:</span>
-                  <span className="price-value">
-                    {utilitiesService.formatCost(setting.common_cost || 0)}/hó
-                  </span>
-                </div>
               </div>
 
               {setting.provider_name && (
@@ -237,16 +587,24 @@ const UtilitySettings = ({ currentHousehold }) => {
 
               <div className="cost-formula">
                 <strong>Képlet:</strong> 
-                {setting.base_fee || 0} + ({setting.current_unit_price || 0} × fogyasztás) + {setting.common_cost || 0} Ft
+                {getUtilityFormula(setting)}
               </div>
             </div>
 
             <div className="setting-actions">
               <button 
-                className="edit-btn"
-                onClick={() => handleEditUtility(setting)}
+                className="pricing-btn"
+                onClick={() => setShowPricingModal(setting)}
+                title="Sávos árazás beállítása"
               >
-                ✏️ Szerkesztés
+                📊 Sávos árazás
+              </button>
+              <button 
+                className="pricing-editor-btn"
+                onClick={() => setEditingUtility(setting)}
+                title="Sávos árazás szerkesztése"
+              >
+                ⚙️ Sávok szerkesztése
               </button>
               <button 
                 className="calculator-btn"
@@ -259,198 +617,9 @@ const UtilitySettings = ({ currentHousehold }) => {
         ))}
       </div>
 
-      {/* Szerkesztés modal */}
-      {editingUtility && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3>
-                {editingUtility.icon} {editingUtility.display_name} - Beállítások
-              </h3>
-              <button className="close-btn" onClick={handleCloseModal}>✕</button>
-            </div>
-            
-            <form onSubmit={handleSaveSettings}>
-              <div className="form-sections">
-                {/* Árbeállítások */}
-                <div className="form-section">
-                  <h4>💰 Árbeállítások</h4>
-                  
-                  <div className="form-group">
-                    <label>Alapdíj (Ft/hó)</label>
-                    <input 
-                      type="number"
-                      step="0.01"
-                      value={formData.base_fee}
-                      onChange={(e) => handleFormChange('base_fee', e.target.value)}
-                      placeholder="pl. 2500"
-                    />
-                    <small>Havi fix költség, függetlenül a fogyasztástól</small>
-                  </div>
+      {/* Modal-ok most a parent komponensben vannak */}
 
-                  <div className="form-group">
-                    <label>Egységár (Ft/{editingUtility.unit})</label>
-                    <input 
-                      type="number"
-                      step="0.01"
-                      value={formData.current_unit_price}
-                      onChange={(e) => handleFormChange('current_unit_price', e.target.value)}
-                      placeholder="pl. 70"
-                    />
-                    <small>Ár egy egység fogyasztásért</small>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Közös költség (Ft/hó)</label>
-                    <input 
-                      type="number"
-                      step="0.01"
-                      value={formData.common_cost}
-                      onChange={(e) => handleFormChange('common_cost', e.target.value)}
-                      placeholder="pl. 800"
-                    />
-                    <small>Társasházi közös fogyasztás, karbantartás</small>
-                  </div>
-                </div>
-
-                {/* Szolgáltató adatok */}
-                <div className="form-section">
-                  <h4>🏢 Szolgáltató adatok</h4>
-                  
-                  <div className="form-group">
-                    <label>Szolgáltató neve</label>
-                    <input 
-                      type="text"
-                      value={formData.provider_name}
-                      onChange={(e) => handleFormChange('provider_name', e.target.value)}
-                      placeholder="pl. E.ON Energiaszolgáltató"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Ügyfélszám</label>
-                    <input 
-                      type="text"
-                      value={formData.customer_number}
-                      onChange={(e) => handleFormChange('customer_number', e.target.value)}
-                      placeholder="pl. 1234567890"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Mérőóra száma</label>
-                    <input 
-                      type="text"
-                      value={formData.meter_number}
-                      onChange={(e) => handleFormChange('meter_number', e.target.value)}
-                      placeholder="pl. M123456"
-                    />
-                  </div>
-                </div>
-
-                {/* Egyéb beállítások */}
-                <div className="form-section">
-                  <h4>🔧 Egyéb beállítások</h4>
-                  
-                  <div className="form-group checkbox-group">
-                    <label>
-                      <input 
-                        type="checkbox"
-                        checked={formData.auto_calculate_cost}
-                        onChange={(e) => handleFormChange('auto_calculate_cost', e.target.checked)}
-                      />
-                      Automatikus költségszámítás
-                    </label>
-                    <small>Ha be van kapcsolva, a rendszer automatikusan számítja a költségeket</small>
-                  </div>
-
-                  <div className="form-group checkbox-group">
-                    <label>
-                      <input 
-                        type="checkbox"
-                        checked={formData.is_enabled}
-                        onChange={(e) => handleFormChange('is_enabled', e.target.checked)}
-                      />
-                      Közmű engedélyezve
-                    </label>
-                    <small>Letiltott közművek nem jelennek meg a fogyasztás rögzítésénél</small>
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-actions">
-                <button type="button" onClick={handleCloseModal}>
-                  Mégse
-                </button>
-                <button type="submit" className="primary">
-                  Mentés
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Kalkulátor modal */}
-      {showCalculator && (
-        <div className="modal-overlay">
-          <div className="modal-content calculator-modal">
-            <div className="modal-header">
-              <h3>
-                🧮 {showCalculator.icon} {showCalculator.display_name} - Költségkalkulátor
-              </h3>
-              <button className="close-btn" onClick={handleCloseModal}>✕</button>
-            </div>
-            
-            <div className="calculator-content">
-              <div className="calculator-input">
-                <label>Fogyasztás ({showCalculator.unit})</label>
-                <input 
-                  type="number"
-                  step="0.001"
-                  value={calculatorConsumption}
-                  onChange={(e) => setCalculatorConsumption(e.target.value)}
-                  placeholder={`pl. 100 ${showCalculator.unit}`}
-                />
-                <button 
-                  className="calculate-btn"
-                  onClick={() => handleCalculate(showCalculator.utility_type_id)}
-                  disabled={!calculatorConsumption}
-                >
-                  Számítás
-                </button>
-              </div>
-
-              {calculatorResult && (
-                <div className="calculator-result">
-                  <h4>💰 Számított költség:</h4>
-                  <div className="cost-breakdown">
-                    <div className="cost-item">
-                      <span>Alapdíj:</span>
-                      <span>{utilitiesService.formatCost(calculatorResult.calculation.base_fee)}</span>
-                    </div>
-                    <div className="cost-item">
-                      <span>Fogyasztás ({calculatorResult.consumption} {calculatorResult.unit}):</span>
-                      <span>{utilitiesService.formatCost(calculatorResult.calculation.consumption_cost)}</span>
-                    </div>
-                    <div className="cost-item">
-                      <span>Közös költség:</span>
-                      <span>{utilitiesService.formatCost(calculatorResult.calculation.common_cost)}</span>
-                    </div>
-                    <div className="cost-total">
-                      <span><strong>Összesen:</strong></span>
-                      <span><strong>{utilitiesService.formatCost(calculatorResult.calculation.total_cost)}</strong></span>
-                    </div>
-                  </div>
-                  <div className="cost-formula">
-                    <strong>Képlet:</strong> {calculatorResult.formula}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Összes modal most a parent komponensben van */}
     </div>
   );
 };

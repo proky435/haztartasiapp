@@ -59,36 +59,86 @@ main {
 
 .main-navigation {
   display: flex;
-  gap: var(--spacing-sm);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 4px;
+  gap: 2px;
 }
 
 .nav-button {
-  background: rgba(255, 255, 255, 0.1);
+  background: transparent;
   color: var(--text-inverse-color);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: var(--spacing-sm) var(--spacing);
-  border-radius: var(--border-radius);
+  border: none;
+  padding: 8px;
+  border-radius: 16px;
   cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all var(--transition-normal);
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  backdrop-filter: blur(10px);
+  justify-content: center;
+  position: relative;
+  width: 40px;
+  height: 40px;
+  opacity: 0.7;
+}
+
+/* Szöveg elrejtése minden méretben */
+.nav-button .nav-text {
+  display: none;
+}
+
+/* Ikon stílus - ultra kompakt */
+.nav-button .nav-icon {
+  font-size: 18px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+/* Számláló badge - mini dot style */
+.nav-button .nav-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: #ff4757;
+  color: white;
+  border-radius: 8px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.nav-button .nav-badge:empty {
+  display: none;
 }
 
 .nav-button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.4);
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.15);
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+.nav-button:hover .nav-icon {
+  transform: scale(1.1);
 }
 
 .nav-button.active {
   background: rgba(255, 255, 255, 0.25);
-  border-color: rgba(255, 255, 255, 0.6);
-  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
-  font-weight: 600;
+  opacity: 1;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.nav-button.active .nav-icon {
+  transform: scale(1.1);
 }
 
 .add-product-button {
@@ -210,13 +260,13 @@ main {
 /* Tablet responsive */
 @media (max-width: 768px) {
   .App-header {
-    padding: var(--spacing);
+    padding: 12px;
     flex-wrap: wrap;
-    gap: var(--spacing);
+    gap: 12px;
   }
   
   .header-left {
-    gap: var(--spacing);
+    gap: 12px;
     flex: 1;
     min-width: 200px;
   }
@@ -226,85 +276,230 @@ main {
   }
   
   .header-right {
-    gap: var(--spacing-sm);
+    gap: 8px;
   }
   
   .main-navigation {
     order: 3;
     width: 100%;
-    margin-top: var(--spacing-sm);
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
   }
   
   .nav-button {
-    padding: var(--spacing-sm) var(--spacing);
-    font-size: 0.9rem;
+    padding: 8px 12px;
+    font-size: 1.2rem;
+    min-height: 46px;
+    flex: 1;
+    min-width: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    position: relative;
+  }
+  
+  /* Tableten is elrejtjük a szöveget */
+  .nav-button .nav-text {
+    display: none;
+  }
+  
+  .nav-button .nav-icon {
+    font-size: 1.3rem;
+  }
+  
+  .nav-button .nav-badge {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    background: #ef4444;
+    color: white;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    min-width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
   }
 
   .household-select {
     min-width: 140px;
     font-size: 0.9rem;
-    padding: var(--spacing-xs) var(--spacing-sm);
+    padding: 8px 12px;
+    min-height: 40px;
+  }
+  
+  .manage-households-button {
+    min-width: 40px;
+    height: 40px;
+    padding: 8px;
   }
 }
 
 /* Mobile responsive */
 @media (max-width: 480px) {
   .App-header {
-    padding: var(--spacing-sm);
+    padding: 8px;
     flex-direction: column;
     align-items: stretch;
-    gap: var(--spacing-sm);
+    gap: 8px;
+    min-height: auto;
   }
   
   .header-left {
-    justify-content: center;
-    gap: var(--spacing-sm);
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-direction: row;
+    width: 100%;
   }
   
   .header-left h1 {
-    font-size: 1.125rem;
-    text-align: center;
+    font-size: 1rem;
+    text-align: left;
+    flex: 1;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   
   .header-right {
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: var(--spacing-xs);
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    gap: 4px;
+    align-items: center;
   }
   
-  .main-navigation {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-xs);
+  /* Háztartás választó külön sorban */
+  .household-selector {
+    order: 1;
     width: 100%;
+    margin-bottom: 8px;
+  }
+  
+  .household-select {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    min-height: 40px;
+    border-radius: 6px;
+  }
+  
+  .manage-households-button {
+    min-width: 36px;
+    height: 36px;
+    padding: 6px;
+    font-size: 1rem;
+  }
+  
+  /* Navigációs gombok grid layoutban */
+  .main-navigation {
+    order: 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 4px;
+    width: 100%;
+    margin-top: 8px;
   }
   
   .nav-button {
-    padding: var(--spacing-sm);
-    font-size: 0.875rem;
-    min-height: 44px; /* Touch target minimum */
+    padding: 6px 4px;
+    font-size: 1.2rem;
+    min-height: 44px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    text-align: center;
+    line-height: 1;
+    border-radius: 8px;
+    gap: 2px;
+    position: relative;
   }
-
-  .household-select {
-    grid-column: 1 / -1;
-    min-width: unset;
-    width: 100%;
-    padding: var(--spacing-sm);
-    font-size: 1rem;
-    min-height: 44px;
+  
+  /* Mobilon is ugyanaz - ikon nagyobb legyen */
+  .nav-button .nav-icon {
+    font-size: 1.4rem;
+    line-height: 1;
+  }
+  
+  /* User menü kompaktabb */
+  .user-button {
+    padding: 4px 8px;
+    gap: 4px;
+    border-radius: 6px;
+    min-height: 32px;
+  }
+  
+  .user-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
   }
   
   .user-name {
     display: none;
   }
   
+  .dropdown-arrow {
+    font-size: 0.6rem;
+  }
+  
+  /* Theme toggle kompaktabb */
+  .theme-toggle {
+    padding: 4px;
+    min-width: 32px;
+    height: 32px;
+    border-radius: 6px;
+  }
+  
   .add-product-button {
-    margin-top: var(--spacing-sm);
-    min-height: 48px;
-    font-size: 1rem;
+    order: 3;
+    margin-top: 8px;
+    min-height: 44px;
+    font-size: 0.9rem;
+    padding: 10px 16px;
+    width: 100%;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 360px) {
+  .App-header {
+    padding: 6px;
+  }
+  
+  .header-left h1 {
+    font-size: 0.9rem;
+  }
+  
+  .main-navigation {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 3px;
+  }
+  
+  .nav-button {
+    padding: 4px 2px;
+    min-height: 40px;
+  }
+  
+  .nav-button .nav-icon {
+    font-size: 1.2rem;
+  }
+  
+  .nav-button .nav-badge {
+    font-size: 0.65rem;
+    min-width: 16px;
+    height: 16px;
+    padding: 1px 4px;
   }
 }
 
@@ -399,4 +594,90 @@ main {
 [data-theme="dark"] .product-list-item {
   background-color: #1e293b !important;
   background: #1e293b !important;
+}
+
+/* Általános beállítások oldal stílusai */
+.settings-container {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  background: var(--background-color);
+  color: var(--text-color);
+}
+
+.settings-header {
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.settings-header h2 {
+  margin: 0 0 5px 0;
+  font-size: 1.8rem;
+  color: var(--primary-color);
+}
+
+.settings-header p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.settings-section {
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px var(--shadow-color);
+  transition: all 0.3s ease;
+}
+
+.settings-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px var(--shadow-color);
+}
+
+.settings-section h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.2rem;
+  color: var(--primary-color);
+}
+
+.settings-section p {
+  margin: 0 0 15px 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.settings-action-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.settings-action-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .settings-container {
+    padding: 15px;
+  }
+  
+  .settings-section {
+    padding: 15px;
+  }
 }

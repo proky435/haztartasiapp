@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
 const { query, transaction } = require('../database/connection');
 const { 
@@ -102,6 +103,45 @@ router.post('/register', [
         'hu'
       ]);
 
+      // Create default household for new user
+      const inviteCode = crypto.randomBytes(4).toString('hex').toUpperCase();
+      
+      const householdResult = await client.query(`
+        INSERT INTO households (name, description, invite_code, invite_code_expires)
+        VALUES ($1, $2, $3, NOW() + INTERVAL '30 days')
+        RETURNING *
+      `, [`${user.name} háztartása`, 'Az első háztartásom', inviteCode]);
+
+      const household = householdResult.rows[0];
+
+      // Add user as admin to the new household
+      await client.query(`
+        INSERT INTO household_members (household_id, user_id, role, invited_by_user_id)
+        VALUES ($1, $2, 'admin', $2)
+      `, [household.id, user.id]);
+
+      // Create default household settings
+      await client.query(`
+        INSERT INTO household_settings (
+          household_id, auto_shopping_enabled, expiry_warning_days, 
+          low_stock_threshold, preferred_stores, budget_settings
+        ) VALUES ($1, $2, $3, $4, $5, $6)
+      `, [
+        household.id,
+        true,
+        3,
+        1.0,
+        JSON.stringify([]),
+        JSON.stringify({ monthly_limit: null, categories: {} })
+      ]);
+
+      // Add household info to user object
+      user.defaultHousehold = {
+        id: household.id,
+        name: household.name,
+        role: 'admin'
+      };
+
       return user;
     });
 
@@ -121,7 +161,8 @@ router.post('/register', [
         email: result.email,
         name: result.name,
         emailVerified: result.email_verified,
-        createdAt: result.created_at
+        createdAt: result.created_at,
+        defaultHousehold: result.defaultHousehold
       },
       tokens: {
         accessToken,
@@ -216,6 +257,12 @@ router.post('/login', [
       email: user.email,
       householdsCount: householdsResult.rows.length
     });
+
+    // JWT tokenek használata esetén nincs session cookie
+    console.log('--- JWT TOKENEK GENERÁLVA ---');
+    console.log('Access Token:', accessToken ? 'Generated' : 'Failed');
+    console.log('Refresh Token:', refreshToken ? 'Generated' : 'Failed');
+    console.log('------------------------------');
 
     res.json({
       message: 'Bejelentkezés sikeres',

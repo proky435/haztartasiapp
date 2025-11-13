@@ -13,7 +13,7 @@ import NotificationBanner from './components/NotificationBanner';
 import HouseholdManager from './components/HouseholdManager';
 import ThemeToggle from './components/ThemeToggle';
 import Utilities from './components/Utilities';
-import UtilitySettings from './components/UtilitySettings';
+import MinimalTest from './components/MinimalTest';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { useDarkThemeForce } from './hooks/useDarkThemeForce';
 import authService from './services/authService';
@@ -31,7 +31,7 @@ function AppContent() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showHouseholdManager, setShowHouseholdManager] = useState(false);
-  const [currentView, setCurrentView] = useState('inventory'); // 'inventory', 'shopping', 'recipes', 'utilities', 'utility-settings'
+  const [currentView, setCurrentView] = useState('inventory'); // 'inventory', 'shopping', 'recipes', 'utilities', 'settings'
   const [isLoading, setIsLoading] = useState(true);
   const [shoppingItems, setShoppingItems] = useState([]);
   const [products, setProducts] = useState([]);
@@ -322,79 +322,47 @@ function AppContent() {
         <div className="header-left">
           <h1>Háztartási Készletkezelő</h1>
           
-          {/* Háztartás választó */}
-          {households.length > 0 && (
-            <div className="household-selector">
-              <select 
-                value={currentHousehold?.id || ''} 
-                onChange={async (e) => {
-                  const selected = households.find(h => h.id === e.target.value);
-                  setCurrentHousehold(selected);
-                  householdsService.setCurrentHousehold(selected);
-                  if (selected) {
-                    await loadInventory(); // Új háztartás készletének betöltése
-                  }
-                }}
-                className="household-select"
-              >
-                {households.map(household => (
-                  <option key={household.id} value={household.id}>
-                    🏠 {household.name}
-                  </option>
-                ))}
-              </select>
-              <button 
-                className="manage-households-button"
-                onClick={() => setShowHouseholdManager(true)}
-                title="Háztartások kezelése"
-              >
-                ⚙️
-              </button>
-            </div>
-          )}
           
           <nav className="main-navigation">
             <button 
               className={`nav-button ${currentView === 'inventory' ? 'active' : ''}`}
               onClick={() => setCurrentView('inventory')}
             >
-              📦 Készlet ({products.length})
+              <span className="nav-icon">📦</span>
+              <span className="nav-text">Készlet</span>
+              {products.length > 0 && <span className="nav-badge">{products.length}</span>}
             </button>
             <button 
               className={`nav-button ${currentView === 'shopping' ? 'active' : ''}`}
               onClick={() => setCurrentView('shopping')}
             >
-              🛒 Bevásárlás ({shoppingItems.filter(item => !item.purchased).length})
+              <span className="nav-icon">🛒</span>
+              <span className="nav-text">Bevásárlás</span>
+              {shoppingItems.filter(item => !item.purchased).length > 0 && <span className="nav-badge">{shoppingItems.filter(item => !item.purchased).length}</span>}
             </button>
             <button 
               className={`nav-button ${currentView === 'recipes' ? 'active' : ''}`}
               onClick={() => setCurrentView('recipes')}
             >
-              🍳 Receptek
+              <span className="nav-icon">🍳</span>
+              <span className="nav-text">Receptek</span>
             </button>
             <button 
               className={`nav-button ${currentView === 'utilities' ? 'active' : ''}`}
               onClick={() => setCurrentView('utilities')}
             >
-              🔌 Közművek
-            </button>
-            <button 
-              className={`nav-button ${currentView === 'utility-settings' ? 'active' : ''}`}
-              onClick={() => setCurrentView('utility-settings')}
-            >
-              ⚙️ Beállítások
+              <span className="nav-icon">🔌</span>
+              <span className="nav-text">Közművek</span>
             </button>
           </nav>
         </div>
         
         <div className="header-right">
-          {currentView === 'inventory' && (
-            <button className="add-product-button" onClick={handleOpenModal}>
-              + Új Termék
-            </button>
-          )}
+          <button className="add-product-button" onClick={handleOpenModal}>
+            + Új Termék
+          </button>
           
-          <ThemeToggle />
+          <ThemeToggle onSettingsClick={() => setCurrentView('settings')} />
           
           <div className="user-menu">
             <button 
@@ -446,10 +414,52 @@ function AppContent() {
           <Utilities 
             currentHousehold={currentHousehold}
           />
-        ) : currentView === 'utility-settings' ? (
-          <UtilitySettings 
-            currentHousehold={currentHousehold}
-          />
+        ) : currentView === 'settings' ? (
+          <div className="settings-container">
+            <div className="settings-header">
+              <h2>⚙️ Általános Beállítások</h2>
+              <p>Háztartás: {currentHousehold?.name}</p>
+            </div>
+            <div className="settings-content">
+              <div className="settings-section">
+                <h3>🏠 Háztartás beállítások</h3>
+                <p>Háztartás kezelése, tagok meghívása</p>
+                <button 
+                  className="settings-action-btn"
+                  onClick={() => setShowHouseholdManager(true)}
+                >
+                  Háztartások kezelése
+                </button>
+              </div>
+              <div className="settings-section">
+                <h3>👤 Felhasználói beállítások</h3>
+                <p>Profil szerkesztése, jelszó módosítása</p>
+                <button 
+                  className="settings-action-btn"
+                  onClick={() => setShowUserProfile(true)}
+                >
+                  Profil szerkesztése
+                </button>
+              </div>
+              <div className="settings-section">
+                <h3>🎨 Téma beállítások</h3>
+                <p>Alkalmazás megjelenésének testreszabása</p>
+                <div className="theme-settings">
+                  <ThemeToggle />
+                </div>
+              </div>
+              <div className="settings-section">
+                <h3>🔌 Közműbeállítások</h3>
+                <p>A közműbeállítások a Közművek menüpontban érhetők el</p>
+                <button 
+                  className="settings-action-btn"
+                  onClick={() => setCurrentView('utilities')}
+                >
+                  Közművek megnyitása
+                </button>
+              </div>
+            </div>
+          </div>
         ) : (
           <ProductList 
             products={products} 
