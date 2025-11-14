@@ -21,7 +21,7 @@ const RecipeShare = ({ recipe, onClose }) => {
       
       // Ha már van share_id, akkor már megosztott
       if (recipe.share_id && recipe.is_public) {
-        const shareUrl = `${window.location.origin}/shared-recipe/${recipe.share_id}`;
+        const shareUrl = `https://192.168.0.19:3000/shared-recipe/${recipe.share_id}`;
         setShareData({
           shareId: recipe.share_id,
           shareUrl: shareUrl,
@@ -57,7 +57,7 @@ const RecipeShare = ({ recipe, onClose }) => {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/v1/shared-recipes/${recipe.id}/share`, {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'https://192.168.0.19:3001'}/api/v1/shared-recipes/${recipe.id}/share`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -92,7 +92,7 @@ const RecipeShare = ({ recipe, onClose }) => {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/v1/shared-recipes/${recipe.id}/share`, {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'https://192.168.0.19:3001'}/api/v1/shared-recipes/${recipe.id}/share`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

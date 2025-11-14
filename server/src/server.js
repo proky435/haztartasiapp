@@ -33,6 +33,7 @@ const householdCostsRoutes = require('./routes/household-costs');
 const recipesRoutes = require('./routes/recipes');
 const uploadRoutes = require('./routes/upload');
 const publicRecipesRoutes = require('./routes/public-recipes');
+const recipeImportRoutes = require('./routes/recipe-import');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -186,6 +187,7 @@ apiRouter.use('/household-costs', householdCostsRoutes);
 apiRouter.use('/recipes', recipesRoutes);
 apiRouter.use('/upload', uploadRoutes);
 apiRouter.use('/shared-recipes', publicRecipesRoutes);
+apiRouter.use('/recipe-import', recipeImportRoutes);
 
 app.use(`/api/${process.env.API_VERSION || 'v1'}`, apiRouter);
 

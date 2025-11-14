@@ -4,6 +4,9 @@ import inventoryService from '../services/inventoryService';
 import customRecipesService from '../services/customRecipesService';
 import shoppingListService from '../services/shoppingListService';
 import ImageUpload from './ImageUpload';
+import RecipeShare from './RecipeShare';
+import RecipeImport from './RecipeImport';
+import RecipeModal from './RecipeModal';
 import './RecipesList.css';
 
 function RecipesList({ currentHousehold }) {
@@ -48,6 +51,8 @@ function RecipesList({ currentHousehold }) {
     maxTime: '',
     difficulty: ''
   });
+  const [shareRecipe, setShareRecipe] = useState(null);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
     loadAvailableIngredients();
@@ -341,7 +346,7 @@ function RecipesList({ currentHousehold }) {
   const handleImageRemove = async () => {
     if (newRecipe.imageFilename) {
       try {
-        const response = await fetch(`/api/v1/upload/recipe-image/${newRecipe.imageFilename}`, {
+        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'https://192.168.0.19:3001'}/api/v1/upload/recipe-image/${newRecipe.imageFilename}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
@@ -372,6 +377,13 @@ function RecipesList({ currentHousehold }) {
     } catch (error) {
       return null;
     }
+  };
+
+  // Import success handler
+  const handleImportSuccess = (importedRecipe) => {
+    // Frissítjük a saját receptek listáját
+    loadCustomRecipes();
+    alert(`Recept "${importedRecipe.title}" sikeresen importálva!`);
   };
 
   // Hozzávaló hozzáadása/eltávolítása az új recepthez
@@ -597,6 +609,12 @@ function RecipesList({ currentHousehold }) {
           >
             ➕ Új recept hozzáadása
           </button>
+          <button 
+            onClick={() => setShowImportModal(true)}
+            className="import-recipe-button"
+          >
+            📥 Recept importálása
+          </button>
         </div>
       )}
 
@@ -700,12 +718,7 @@ function RecipesList({ currentHousehold }) {
             <div className="recipes-grid">
               {recipes.map(recipe => (
                 <div key={recipe.id} className="recipe-card">
-                  <div className="recipe-image">
-                    <img 
-                      src={recipe.image || '/placeholder-recipe.jpg'} 
-                      alt={recipe.title}
-                      onError={(e) => e.target.src = '/placeholder-recipe.jpg'}
-                    />
+                  <div className="recipe-content">
                     <div className="recipe-badges">
                       <span 
                         className="availability-badge"
@@ -719,9 +732,7 @@ function RecipesList({ currentHousehold }) {
                         </span>
                       )}
                     </div>
-                  </div>
-                  
-                  <div className="recipe-content">
+                    
                     <h3 className="recipe-title">{recipe.title}</h3>
                     
                     <div className="recipe-stats">
@@ -788,17 +799,6 @@ function RecipesList({ currentHousehold }) {
             <div className="recipes-grid">
               {customRecipes.map(recipe => (
                 <div key={recipe.id} className="recipe-card custom-recipe">
-                  {/* Recept kép */}
-                  {recipe.image_url && (
-                    <div className="recipe-image">
-                      <img 
-                        src={recipe.image_url} 
-                        alt={recipe.title}
-                        onError={(e) => e.target.style.display = 'none'}
-                      />
-                    </div>
-                  )}
-                  
                   <div className="recipe-content">
                     <h3 className="recipe-title">{recipe.title}</h3>
                     
@@ -826,6 +826,7 @@ function RecipesList({ currentHousehold }) {
                       <button 
                         onClick={() => setSelectedRecipe(recipe)}
                         className="view-recipe-button"
+                        title="Recept megtekintése"
                       >
                         📖 Recept
                       </button>
@@ -835,6 +836,13 @@ function RecipesList({ currentHousehold }) {
                         title="Hozzávalók hozzáadása a bevásárlólistához"
                       >
                         🛒 Lista
+                      </button>
+                      <button 
+                        onClick={() => setShareRecipe(recipe)}
+                        className="share-recipe-button"
+                        title="Recept megosztása"
+                      >
+                        🔗 Megosztás
                       </button>
                       {/* Törlés gomb csak a saját recepteknél */}
                       {currentUser && recipe.created_by === currentUser.id && (
@@ -1116,6 +1124,30 @@ function RecipesList({ currentHousehold }) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Recept megosztás modal */}
+      {shareRecipe && (
+        <RecipeShare 
+          recipe={shareRecipe}
+          onClose={() => setShareRecipe(null)}
+        />
+      )}
+
+      {/* Recept importálás modal */}
+      {showImportModal && (
+        <RecipeImport 
+          onClose={() => setShowImportModal(false)}
+          onImportSuccess={handleImportSuccess}
+        />
+      )}
+
+      {/* Recept részletek modal */}
+      {selectedRecipe && (
+        <RecipeModal 
+          recipe={selectedRecipe}
+          onClose={() => setSelectedRecipe(null)}
+        />
       )}
     </div>
   );

@@ -1,5 +1,6 @@
 const express = require('express');
 const { query } = require('../database/connection');
+const { authenticateToken } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
 const router = express.Router();
@@ -71,8 +72,6 @@ router.get('/:shareId', async (req, res) => {
         servings: recipe.servings,
         difficulty: recipe.difficulty,
         imageUrl: recipe.image_url,
-        createdBy: recipe.created_by_name,
-        householdName: recipe.household_name,
         viewCount: recipe.view_count + 1,
         createdAt: recipe.created_at,
         shareId: recipe.share_id
@@ -89,7 +88,7 @@ router.get('/:shareId', async (req, res) => {
 });
 
 // Recept publikusság beállítása (auth szükséges)
-router.put('/:recipeId/share', async (req, res) => {
+router.put('/:recipeId/share', authenticateToken, async (req, res) => {
   try {
     const { recipeId } = req.params;
     const { isPublic } = req.body;
@@ -108,6 +107,13 @@ router.put('/:recipeId/share', async (req, res) => {
     }
 
     const recipe = ownerCheck.rows[0];
+    
+    // Ellenőrizzük, hogy a felhasználó a tulajdonos-e
+    if (recipe.created_by !== req.user.id) {
+      return res.status(403).json({
+        error: 'Nincs jogosultságod ehhez a recepthez'
+      });
+    }
     
     // Share ID generálása ha még nincs
     let shareId = recipe.share_id;
@@ -129,7 +135,7 @@ router.put('/:recipeId/share', async (req, res) => {
       data: {
         shareId: isPublic ? shareId : null,
         isPublic: isPublic,
-        shareUrl: isPublic ? `${process.env.FRONTEND_URL || 'http://localhost:3000'}/shared-recipe/${shareId}` : null
+        shareUrl: isPublic ? `${process.env.FRONTEND_URL || 'https://192.168.0.19:3000'}/shared-recipe/${shareId}` : null
       }
     });
 

@@ -50,7 +50,7 @@ const ImageUpload = ({ onImageUpload, onImageRemove, currentImage, disabled = fa
       const formData = new FormData();
       formData.append('image', file);
 
-      const response = await fetch('/api/v1/upload/recipe-image', {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'https://192.168.0.19:3001'}/api/v1/upload/recipe-image`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
