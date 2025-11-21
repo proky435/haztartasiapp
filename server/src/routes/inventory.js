@@ -3,8 +3,81 @@ const { body, param, query: queryValidator, validationResult } = require('expres
 const { query, transaction } = require('../database/connection');
 const { authenticateToken, requireRole, requirePermission } = require('../middleware/auth');
 const logger = require('../utils/logger');
+const expiryPatternService = require('../services/expiryPatternService');
 
 const router = express.Router();
+
+/**
+ * GET /api/v1/households/:householdId/inventory/expiry-suggestion
+ * Lejárati dátum javaslat lekérése egy termékhez
+ */
+router.get('/expiry-suggestion', [
+  authenticateToken,
+  queryValidator('barcode').optional().trim(),
+  queryValidator('productName').optional().trim()
+], requireRole('viewer'), async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      logger.warn('Expiry suggestion validation error', {
+        errors: errors.array(),
+        params: req.params,
+        query: req.query
+      });
+      return res.status(400).json({
+        error: 'Validációs hiba',
+        details: errors.array()
+      });
+    }
+
+    const { householdId } = req.params;
+    const { barcode, productName } = req.query;
+
+    logger.info('Expiry suggestion request', {
+      householdId,
+      barcode,
+      productName,
+      params: req.params,
+      query: req.query
+    });
+
+    if (!householdId) {
+      return res.status(400).json({
+        error: 'Hiányzó paraméter',
+        message: 'Household ID megadása kötelező'
+      });
+    }
+
+    if (!barcode && !productName) {
+      return res.status(400).json({
+        error: 'Hiányzó paraméter',
+        message: 'Barcode vagy productName megadása kötelező'
+      });
+    }
+
+    const suggestion = await expiryPatternService.getExpirySuggestion(
+      householdId,
+      barcode,
+      productName
+    );
+
+    if (!suggestion) {
+      return res.json({
+        hasPattern: false,
+        message: 'Nincs elég adat ehhez a termékhez (minimum 3 minta szükséges)'
+      });
+    }
+
+    res.json(suggestion);
+
+  } catch (error) {
+    logger.error('Hiba a lejárati javaslat lekérésekor:', error);
+    res.status(500).json({
+      error: 'Szerver hiba',
+      message: 'Lejárati javaslat lekérése során hiba történt'
+    });
+  }
+});
 
 /**
  * GET /api/v1/households/:householdId/inventory
@@ -226,7 +299,8 @@ router.post('/:householdId', [
   body('product_master_id').optional().isUUID().withMessage('Érvénytelen termék azonosító'),
   body('custom_name').optional().trim().isLength({ min: 1, max: 255 }),
   body('custom_brand').optional().trim().isLength({ max: 255 }),
-  body('quantity').isFloat({ min: 0 }).withMessage('A mennyiségnek pozitív számnak kell lennie'),
+  body('barcode').optional().trim().isLength({ min: 8, max: 20 }).withMessage('Érvénytelen vonalkód'),
+  body('quantity').isNumeric().withMessage('A mennyiségnek számnak kell lennie'),
   body('unit').optional().trim().isLength({ max: 20 }),
   body('location').optional().trim().isLength({ max: 100 }),
   body('expiry_date').optional().isISO8601().withMessage('Érvénytelen dátum formátum'),
@@ -237,19 +311,32 @@ router.post('/:householdId', [
   body('minimum_stock').optional().isFloat({ min: 0 }).withMessage('A minimum készletnek pozitív számnak kell lennie')
 ], requireRole('member'), requirePermission('add_inventory'), async (req, res) => {
   try {
+    console.log('📦 Inventory add request:', {
+      body: req.body,
+      params: req.params
+    });
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.error('❌ Validation errors:', errors.array());
+      logger.warn('Inventory add validation error', {
+        errors: errors.array(),
+        body: req.body,
+        params: req.params
+      });
       return res.status(400).json({
         error: 'Validációs hiba',
         details: errors.array()
       });
     }
 
+    console.log('✅ Validation passed');
     const { householdId } = req.params;
     const {
       product_master_id,
       custom_name,
       custom_brand,
+      barcode,
       quantity,
       unit = 'db',
       location,
@@ -320,6 +407,45 @@ router.post('/:householdId', [
         [product_master_id]
       );
       productDetails = productResult.rows[0];
+    }
+
+    // Lejárati minta rögzítése (ha van expiry_date és purchase_date)
+    if (expiry_date && purchase_date) {
+      try {
+        const purchaseDateTime = new Date(purchase_date);
+        const expiryDateTime = new Date(expiry_date);
+        const shelfLifeDays = Math.round((expiryDateTime - purchaseDateTime) / (1000 * 60 * 60 * 24));
+        
+        if (shelfLifeDays >= 0) {
+          await expiryPatternService.recordExpiryPattern(
+            householdId,
+            productDetails?.barcode || null,
+            productDetails?.name || custom_name,
+            shelfLifeDays
+          );
+        }
+      } catch (patternError) {
+        // Ne dobjunk hibát, csak logoljuk
+        logger.warn('Lejárati minta rögzítése sikertelen:', patternError);
+      }
+    } else if (expiry_date) {
+      // Ha nincs purchase_date, használjuk a mai napot
+      try {
+        const today = new Date();
+        const expiryDateTime = new Date(expiry_date);
+        const shelfLifeDays = Math.round((expiryDateTime - today) / (1000 * 60 * 60 * 24));
+        
+        if (shelfLifeDays >= 0) {
+          await expiryPatternService.recordExpiryPattern(
+            householdId,
+            productDetails?.barcode || null,
+            productDetails?.name || custom_name,
+            shelfLifeDays
+          );
+        }
+      } catch (patternError) {
+        logger.warn('Lejárati minta rögzítése sikertelen:', patternError);
+      }
     }
 
     logger.info('Inventory item added successfully', {

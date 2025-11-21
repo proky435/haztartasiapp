@@ -6,16 +6,6 @@
     "auditLog": "C:\\Users\\DELL\\Desktop\\GITHUB\\haztartasiapp\\server\\logs\\.fbab37153109235480ade69ba1de847167f5cf8a-audit.json",
     "files": [
         {
-            "date": 1760975290116,
-            "name": "C:\\Users\\DELL\\Desktop\\GITHUB\\haztartasiapp\\server\\logs\\combined-2025-10-20.log",
-            "hash": "27fbf08131545d4cfff04bff90b78d3dc9047634f28bd50488370d4237c37f40"
-        },
-        {
-            "date": 1760997649695,
-            "name": "C:\\Users\\DELL\\Desktop\\GITHUB\\haztartasiapp\\server\\logs\\combined-2025-10-21.log",
-            "hash": "c230540af46fe42cadc6ababc1ff70fdaa8e7dcd0d83880d32958d8a2c3957ca"
-        },
-        {
             "date": 1762781966456,
             "name": "C:\\Users\\DELL\\Desktop\\GITHUB\\haztartasiapp\\server\\logs\\combined-2025-11-10.log",
             "hash": "25e23b2a278d493abe6c1e4e825d15e2677fc5c106498b004bc49933d4230a6d"
@@ -39,6 +29,21 @@
             "date": 1763076445919,
             "name": "C:\\Users\\DELL\\Desktop\\GITHUB\\haztartasiapp\\server\\logs\\combined-2025-11-14.log",
             "hash": "58a04f95a1cd74a4d36eb70d513a1bef6742cfd7473eba64de374b3cf64c3cb9"
+        },
+        {
+            "date": 1763292609113,
+            "name": "C:\\Users\\DELL\\Desktop\\GITHUB\\haztartasiapp\\server\\logs\\combined-2025-11-16.log",
+            "hash": "8f688246a4374569f71cf37df5e37c35a97bd25a3426476e60f743e0313fd340"
+        },
+        {
+            "date": 1763479742664,
+            "name": "C:\\Users\\DELL\\Desktop\\GITHUB\\haztartasiapp\\server\\logs\\combined-2025-11-18.log",
+            "hash": "5183a950a8f568b1ec6bf9ce0bdc489accd76a012b38731075a185aca1eb85c2"
+        },
+        {
+            "date": 1763732583107,
+            "name": "C:\\Users\\DELL\\Desktop\\GITHUB\\haztartasiapp\\server\\logs\\combined-2025-11-21.log",
+            "hash": "0422921c3a25fb754f762666ecc19387aa59302f8d4180c0103500d6b1074531"
         }
     ],
     "hashType": "sha256"

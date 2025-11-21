@@ -54,8 +54,8 @@ function SimpleBarcodeScanner({ onScan, onClose }) {
   };
 
   return (
-    <div className="barcode-scanner-overlay">
-      <div className="barcode-scanner-container">
+    <div className="barcode-scanner-overlay" onClick={handleClose}>
+      <div className="barcode-scanner-container" onClick={(e) => e.stopPropagation()}>
         <div className="scanner-header">
           <h3>Vonalkód Beolvasása</h3>
           <button className="close-button" onClick={handleClose}>×</button>

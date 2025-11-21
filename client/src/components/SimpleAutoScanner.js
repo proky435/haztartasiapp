@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import './BarcodeScanner.css';
 import { BrowserMultiFormatReader } from '@zxing/library';
+import productsService from '../services/productsService';
 
 function SimpleAutoScanner({ onScan, onClose }) {
   const videoRef = useRef(null);
@@ -74,12 +75,31 @@ function SimpleAutoScanner({ onScan, onClose }) {
       
       if (result) {
         console.log('Vonalkód felismerve:', result.text);
-        onScan(result.text);
+        
+        // Termék adatok lekérése
+        try {
+          const product = await productsService.getProductByBarcode(result.text);
+          if (product) {
+            const formattedProduct = productsService.formatProductForDisplay(product);
+            console.log('Termék adatok betöltve:', formattedProduct);
+            // VÁRJUK MEG az onScan callback befejezését!
+            await onScan(result.text, formattedProduct);
+          } else {
+            console.log('Termék nem található, csak vonalkód');
+            await onScan(result.text);
+          }
+        } catch (error) {
+          console.error('Termék lekérési hiba:', error);
+          await onScan(result.text);
+        }
+      } else {
+        // Ha nem sikerült felismerni, akkor állítsuk vissza
+        setIsScanning(false);
+        setAutoScanEnabled(false);
       }
     } catch (err) {
       console.error('Automatikus felismerés hiba:', err);
       setError('Automatikus felismerés sikertelen. Próbáld a manuális bevitelt.');
-    } finally {
       setIsScanning(false);
       setAutoScanEnabled(false);
     }
@@ -119,20 +139,36 @@ function SimpleAutoScanner({ onScan, onClose }) {
       
       if (result) {
         console.log('Vonalkód felismerve képből:', result.text);
-        onScan(result.text);
+        
+        // Termék adatok lekérése
+        try {
+          const product = await productsService.getProductByBarcode(result.text);
+          if (product) {
+            const formattedProduct = productsService.formatProductForDisplay(product);
+            console.log('Termék adatok betöltve képből:', formattedProduct);
+            // VÁRJUK MEG az onScan callback befejezését!
+            await onScan(result.text, formattedProduct);
+          } else {
+            console.log('Termék nem található, csak vonalkód');
+            await onScan(result.text);
+          }
+        } catch (error) {
+          console.error('Termék lekérési hiba:', error);
+          await onScan(result.text);
+        }
       } else {
         console.log('Nem sikerült felismerni a vonalkódot a képből');
+        setIsScanning(false);
       }
     } catch (err) {
       console.error('Kép alapú felismerés hiba:', err);
-    } finally {
       setIsScanning(false);
     }
   };
 
   return (
-    <div className="barcode-scanner-overlay">
-      <div className="barcode-scanner-container">
+    <div className="barcode-scanner-overlay" onClick={handleClose}>
+      <div className="barcode-scanner-container" onClick={(e) => e.stopPropagation()}>
         <div className="scanner-header">
           <h3>Automatikus Vonalkód Scanner</h3>
           <button className="close-button" onClick={handleClose}>×</button>
@@ -164,14 +200,24 @@ function SimpleAutoScanner({ onScan, onClose }) {
           
           <div className="scanner-controls">
             <button 
-              onClick={autoScanEnabled ? stopAutoScan : startAutoScan}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (autoScanEnabled) {
+                  stopAutoScan();
+                } else {
+                  startAutoScan();
+                }
+              }}
               className={autoScanEnabled ? "stop-scan-button" : "start-scan-button"}
               disabled={!stream || error || isScanning}
             >
-              {isScanning ? '🔄 Felismerés...' : autoScanEnabled ? '⏹️ Leállítás' : '🎯 Automatikus Felismerés'}
+              {isScanning ? '🔄 Termék betöltése...' : autoScanEnabled ? '⏹️ Leállítás' : '🎯 Automatikus Felismerés'}
             </button>
             <button 
-              onClick={captureImage}
+              onClick={(e) => {
+                e.stopPropagation();
+                captureImage();
+              }}
               className="capture-button"
               disabled={!stream || error || isScanning}
             >

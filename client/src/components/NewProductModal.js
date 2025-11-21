@@ -7,15 +7,20 @@ import CameraWarning from './CameraWarning';
 import ErrorBoundary from './ErrorBoundary';
 import ProductRenameModal from './ProductRenameModal';
 import productsService from '../services/productsService';
+import expiryPatternService from '../services/expiryPatternService';
 import { isSecureContext, isCameraSupported } from '../utils/cameraUtils';
 import './NewProductModal.css';
 
-function NewProductModal({ onClose, onAdd }) {
+function NewProductModal({ onClose, onAdd, householdId }) {
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [expiryDate, setExpiryDate] = useState('');
   const [location, setLocation] = useState('Hűtő');
   const [barcode, setBarcode] = useState('');
+  const [price, setPrice] = useState('');
+  const [notes, setNotes] = useState('');
+  const [expirySuggestion, setExpirySuggestion] = useState(null);
+  const [showSuggestion, setShowSuggestion] = useState(false);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [showDateScanner, setShowDateScanner] = useState(false);
   const [isLoadingProduct, setIsLoadingProduct] = useState(false);
@@ -33,9 +38,13 @@ function NewProductModal({ onClose, onAdd }) {
       
       if (product) {
         const formattedProduct = productsService.formatProductForDisplay(product);
-        setName(formattedProduct.displayName || 'Ismeretlen termék');
+        const productName = formattedProduct.displayName || 'Ismeretlen termék';
+        setName(productName);
         setBarcode(barcodeValue);
         setCurrentProduct(product); // Termék mentése átnevezéshez
+        
+        // Lekérjük a lejárati javaslatot
+        await fetchExpirySuggestion(barcodeValue, productName);
       } else {
         setBarcode(barcodeValue);
         setName(''); // Ismeretlen termék, kézi bevitel szükséges
@@ -69,17 +78,26 @@ function NewProductModal({ onClose, onAdd }) {
     }
   };
 
-  const handleBarcodeScanned = (scannedBarcode, productData = null) => {
-    setShowBarcodeScanner(false);
+  const handleBarcodeScanned = async (scannedBarcode, productData = null) => {
+    // Ne zárjuk be azonnal a scanner-t, várjuk meg az adatok betöltését
     
     if (productData) {
       // Termék adatok már megvannak a scanner-től
       setBarcode(scannedBarcode);
       setName(productData.displayName || '');
       setIsLoadingProduct(false);
+      
+      // Lekérjük a lejárati javaslatot
+      await fetchExpirySuggestion(scannedBarcode, productData.displayName);
+      
+      // Most zárjuk be a scanner-t
+      setShowBarcodeScanner(false);
     } else {
       // Fallback: kézi lekérdezés
-      fetchProductByBarcode(scannedBarcode);
+      await fetchProductByBarcode(scannedBarcode);
+      
+      // Most zárjuk be a scanner-t
+      setShowBarcodeScanner(false);
     }
   };
 
@@ -125,132 +143,300 @@ function NewProductModal({ onClose, onAdd }) {
     setShowRenameModal(false);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (name && quantity > 0) {
-      onAdd({ 
-        name, 
-        quantity: parseInt(quantity, 10),
-        expiryDate: expiryDate || null,
-        location,
-        barcode: barcode || null
-      });
+  // Lejárati javaslat lekérése
+  const fetchExpirySuggestion = async (productBarcode, productName) => {
+    if (!householdId) return;
+    
+    try {
+      const suggestion = await expiryPatternService.getExpirySuggestion(
+        householdId,
+        productBarcode,
+        productName
+      );
+      
+      if (suggestion && suggestion.hasPattern) {
+        setExpirySuggestion(suggestion);
+        setShowSuggestion(true);
+      } else {
+        setExpirySuggestion(null);
+        setShowSuggestion(false);
+      }
+    } catch (error) {
+      console.error('Hiba a lejárati javaslat lekérésekor:', error);
     }
   };
 
+  // Javaslat alkalmazása
+  const applySuggestion = () => {
+    if (expirySuggestion && expirySuggestion.suggestedExpiryDate) {
+      setExpiryDate(expirySuggestion.suggestedExpiryDate);
+      setShowSuggestion(false);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log('handleSubmit called', { name, quantity });
+    if (name && quantity > 0) {
+      const productData = { 
+        custom_name: name,  // Backend vár custom_name-et
+        quantity: parseInt(quantity, 10),
+        expiry_date: expiryDate || null,  // Backend snake_case-t használ
+        location,
+        barcode: barcode || null,
+        price: price ? parseFloat(price) : null,
+        notes: notes || null
+      };
+      console.log('Calling onAdd with:', productData);
+      onAdd(productData);
+    } else {
+      console.warn('Validation failed:', { name, quantity });
+    }
+  };
+
+  // Hely ikonok
+  const locationIcons = {
+    'Hűtő': '❄️',
+    'Fagyasztó': '🧊',
+    'Kamra': '🏺',
+    'Egyéb': '📦'
+  };
+
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2>Új Termék Hozzáadása</h2>
-        <form onSubmit={handleSubmit}>
-          <label>
-            Termék Neve:
-            <div className="name-input-group">
-              <input 
-                type="text" 
-                name="name" 
-                value={name} 
-                onChange={(e) => setName(e.target.value)} 
-                required 
-                disabled={isLoadingProduct}
-              />
-              {currentProduct && (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        {isLoadingProduct && (
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+          </div>
+        )}
+        
+        <div className="modal-header">
+          <h2>🛒 Új Termék Hozzáadása</h2>
+          <button className="modal-close-btn" onClick={onClose} type="button">×</button>
+        </div>
+        
+        <div className="modal-body">
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>
+                <span className="label-icon">🏷️</span>
+                Termék Neve
+              </label>
+              <div className="name-input-group">
+                <input 
+                  type="text" 
+                  name="name" 
+                  value={name} 
+                  onChange={(e) => setName(e.target.value)} 
+                  placeholder="pl. Tej, Kenyér, Alma..."
+                  required 
+                  disabled={isLoadingProduct}
+                />
+                {barcode && name && (
+                  <button 
+                    type="button" 
+                    onClick={handleRenameProduct}
+                    className="rename-button"
+                    title="Termék átnevezése"
+                  >
+                    ✏️ Átnevezés
+                  </button>
+                )}
+              </div>
+              {currentProduct && currentProduct.isCustomName && (
+                <small className="custom-name-indicator">
+                  ✓ Egyedi név használatban
+                </small>
+              )}
+            </div>
+          
+            <div className="form-group">
+              <label>
+                <span className="label-icon">🔢</span>
+                Mennyiség
+              </label>
+              <div className="quantity-input-wrapper">
+                <input 
+                  type="number" 
+                  name="quantity" 
+                  value={quantity} 
+                  onChange={(e) => setQuantity(e.target.value)} 
+                  min="1" 
+                  placeholder="Darabszám"
+                  required 
+                />
+              </div>
+              <div className="quantity-stepper">
                 <button 
                   type="button" 
-                  onClick={handleRenameProduct}
-                  className="rename-button"
-                  title="Termék átnevezése"
+                  className="quantity-stepper-btn"
+                  onClick={() => setQuantity(Math.max(1, parseInt(quantity) - 1))}
+                  disabled={parseInt(quantity) <= 1}
                 >
-                  ✏️ Átnevezés
+                  ➖
                 </button>
+                <div className="quantity-display">{quantity}</div>
+                <button 
+                  type="button" 
+                  className="quantity-stepper-btn"
+                  onClick={() => setQuantity(parseInt(quantity) + 1)}
+                >
+                  ➕
+                </button>
+              </div>
+              <div className="quantity-quick-buttons">
+                <button type="button" className="quantity-btn" onClick={() => setQuantity(1)}>1 db</button>
+                <button type="button" className="quantity-btn" onClick={() => setQuantity(2)}>2 db</button>
+                <button type="button" className="quantity-btn" onClick={() => setQuantity(5)}>5 db</button>
+                <button type="button" className="quantity-btn" onClick={() => setQuantity(10)}>10 db</button>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>
+                <span className="label-icon">📅</span>
+                Lejárati Dátum
+              </label>
+              <input 
+                type="date" 
+                name="expiryDate" 
+                value={expiryDate} 
+                onChange={(e) => setExpiryDate(e.target.value)} 
+              />
+              
+              {/* Lejárati javaslat megjelenítése */}
+              {showSuggestion && expirySuggestion && (
+                <div className="expiry-suggestion">
+                  <div className="suggestion-header">
+                    <span className="suggestion-icon">💡</span>
+                    <span className="suggestion-title">Javaslat a korábbi vásárlásaid alapján</span>
+                  </div>
+                  <div className="suggestion-message">
+                    {expirySuggestion.message}
+                  </div>
+                  <div className="suggestion-actions">
+                    <button 
+                      type="button" 
+                      className="suggestion-apply-btn"
+                      onClick={applySuggestion}
+                    >
+                      ✅ Alkalmazás ({new Date(expirySuggestion.suggestedExpiryDate).toLocaleDateString('hu-HU')})
+                    </button>
+                    <button 
+                      type="button" 
+                      className="suggestion-dismiss-btn"
+                      onClick={() => setShowSuggestion(false)}
+                    >
+                      ❌ Elvetés
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
-            {currentProduct && currentProduct.isCustomName && (
-              <small className="custom-name-indicator">
-                ✓ Egyedi név használatban
-              </small>
+
+            <div className="form-group">
+              <label>
+                <span className="label-icon">📍</span>
+                Tárolási Hely
+              </label>
+              <div className="location-options">
+                {['Hűtő', 'Fagyasztó', 'Kamra', 'Egyéb'].map((loc) => (
+                  <div
+                    key={loc}
+                    className={`location-option ${location === loc ? 'selected' : ''}`}
+                    onClick={() => setLocation(loc)}
+                  >
+                    <span className="location-icon">{locationIcons[loc]}</span>
+                    <span className="location-label">{loc}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>
+                <span className="label-icon">💰</span>
+                Ár (opcionális)
+              </label>
+              <div className="price-input-wrapper">
+                <input 
+                  type="number" 
+                  name="price" 
+                  value={price} 
+                  onChange={(e) => setPrice(e.target.value)} 
+                  min="0"
+                  step="0.01"
+                  placeholder="pl. 450"
+                />
+                <span className="price-currency">Ft</span>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>
+                <span className="label-icon">📝</span>
+                Megjegyzés (opcionális)
+              </label>
+              <textarea 
+                name="notes" 
+                value={notes} 
+                onChange={(e) => setNotes(e.target.value)} 
+                placeholder="pl. Bio termék, kedvezményes..."
+                rows="3"
+                className="notes-textarea"
+              />
+            </div>
+
+            {barcode && (
+              <div className="barcode-info">
+                <strong>Vonalkód:</strong> {barcode}
+              </div>
             )}
-          </label>
-          
-          <label>
-            Mennyiség:
-            <input 
-              type="number" 
-              name="quantity" 
-              value={quantity} 
-              onChange={(e) => setQuantity(e.target.value)} 
-              min="1" 
-              required 
-            />
-          </label>
 
-          <label>
-            Lejárati Dátum:
-            <input 
-              type="date" 
-              name="expiryDate" 
-              value={expiryDate} 
-              onChange={(e) => setExpiryDate(e.target.value)} 
-            />
-          </label>
-
-          <label>
-            Hely:
-            <select 
-              name="location" 
-              value={location} 
-              onChange={(e) => setLocation(e.target.value)}
-            >
-              <option value="Hűtő">Hűtő</option>
-              <option value="Fagyasztó">Fagyasztó</option>
-              <option value="Kamra">Kamra</option>
-              <option value="Egyéb">Egyéb</option>
-            </select>
-          </label>
-
-          {barcode && (
-            <div className="barcode-info">
-              <strong>Vonalkód:</strong> {barcode}
+            <div className="scan-options">
+              <div className="scan-options-title">⚡ Gyors Bevitel</div>
+              <div className="button-group">
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setUseSimpleScanner(true);
+                    setShowBarcodeScanner(true);
+                  }}
+                  disabled={isLoadingProduct}
+                >
+                  {isLoadingProduct ? '⏳ Betöltés...' : '📝 Vonalkód Bevitel'}
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setUseSimpleScanner('auto');
+                    setShowBarcodeScanner(true);
+                  }}
+                  disabled={isLoadingProduct}
+                >
+                  📷 Kamera Szkennelés
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => handleCameraAction(
+                    () => setShowDateScanner(true),
+                    'Dátum Felismerése (OCR)'
+                  )}
+                >
+                  📅 Dátum OCR
+                </button>
+              </div>
             </div>
-          )}
-
-          <div className="button-group">
-            <button 
-              type="button" 
-              onClick={() => {
-                setUseSimpleScanner(true);
-                setShowBarcodeScanner(true);
-              }}
-              disabled={isLoadingProduct}
-            >
-              {isLoadingProduct ? 'Betöltés...' : '📝 Vonalkód Bevitel'}
-            </button>
-            <button 
-              type="button" 
-              onClick={() => {
-                setUseSimpleScanner('auto');
-                setShowBarcodeScanner(true);
-              }}
-              disabled={isLoadingProduct}
-            >
-              📷 Kamera + Manuális
-            </button>
-            <button 
-              type="button" 
-              onClick={() => handleCameraAction(
-                () => setShowDateScanner(true),
-                'Dátum Felismerése (OCR)'
-              )}
-            >
-              📅 Dátum Felismerése (OCR)
-            </button>
-          </div>
           
-          <div className="form-actions">
-            <button type="submit" disabled={isLoadingProduct}>Mentés</button>
-            <button type="button" onClick={onClose}>Mégse</button>
-          </div>
-        </form>
+            <div className="form-actions">
+              <button type="button" onClick={onClose}>❌ Mégse</button>
+              <button type="submit" disabled={isLoadingProduct}>
+                {isLoadingProduct ? '⏳ Betöltés...' : '✅ Mentés'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
       
       {showBarcodeScanner && (

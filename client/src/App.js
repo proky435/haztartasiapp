@@ -51,14 +51,25 @@ function AppContent() {
   };
 
   const handleAddProduct = async (newProduct) => {
+    console.log('handleAddProduct called with:', newProduct);
     try {
       setInventoryLoading(true);
-      await inventoryService.addInventoryItem(newProduct);
+      console.log('Adding inventory item...');
+      const result = await inventoryService.addInventoryItem(newProduct);
+      console.log('Inventory item added:', result);
+      console.log('Reloading inventory...');
       await loadInventory(); // Frissítjük a listát
+      console.log('Closing modal...');
       setIsModalOpen(false);
     } catch (error) {
       console.error('Error adding product:', error);
-      alert('Hiba történt a termék hozzáadásakor: ' + error.message);
+      console.error('Error details:', {
+        message: error.message,
+        status: error.status,
+        data: error.data,
+        response: error.response
+      });
+      alert('Hiba történt a termék hozzáadásakor: ' + JSON.stringify(error.data || error.message));
     } finally {
       setInventoryLoading(false);
     }
@@ -495,7 +506,8 @@ function AppContent() {
       {isModalOpen && (
         <NewProductModal 
           onClose={handleCloseModal} 
-          onAdd={handleAddProduct} 
+          onAdd={handleAddProduct}
+          householdId={currentHousehold?.id}
         />
       )}
       

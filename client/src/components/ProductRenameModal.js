@@ -47,8 +47,8 @@ function ProductRenameModal({ product, onClose, onRenamed }) {
   if (!product) return null;
 
   return (
-    <div className="product-rename-overlay">
-      <div className="product-rename-modal">
+    <div className="product-rename-overlay" onClick={onClose}>
+      <div className="product-rename-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3>Termék Átnevezése</h3>
           <button className="close-button" onClick={onClose}>×</button>

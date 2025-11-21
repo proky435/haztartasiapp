@@ -1,9 +1,10 @@
 const express = require('express');
-const { body, param, validationResult } = require('express-validator');
+const { body, param, query: queryValidator, validationResult } = require('express-validator');
 const { query, transaction } = require('../database/connection');
 const { authenticateToken, requireRole } = require('../middleware/auth');
 const logger = require('../utils/logger');
 const crypto = require('crypto');
+const expiryPatternService = require('../services/expiryPatternService');
 
 const router = express.Router();
 
@@ -674,17 +675,69 @@ router.get('/:id/inventory', authenticateToken, async (req, res) => {
 });
 
 /**
+ * GET /api/v1/households/:id/inventory/expiry-suggestion
+ * Lejárati dátum javaslat lekérése egy termékhez
+ */
+router.get('/:id/inventory/expiry-suggestion', [
+  authenticateToken,
+  queryValidator('barcode').optional().trim(),
+  queryValidator('productName').optional().trim()
+], async (req, res) => {
+  try {
+    const householdId = req.params.id;
+    const { barcode, productName } = req.query;
+
+    if (!barcode && !productName) {
+      return res.status(400).json({
+        error: 'Hiányzó paraméter',
+        message: 'Barcode vagy productName megadása kötelező'
+      });
+    }
+
+    const suggestion = await expiryPatternService.getExpirySuggestion(
+      householdId,
+      barcode,
+      productName
+    );
+
+    if (!suggestion) {
+      return res.json({
+        hasPattern: false,
+        message: 'Nincs elég adat ehhez a termékhez (minimum 3 minta szükséges)'
+      });
+    }
+
+    res.json(suggestion);
+
+  } catch (error) {
+    logger.logError(error, req, { operation: 'getExpirySuggestion' });
+    res.status(500).json({
+      error: 'Szerver hiba',
+      message: 'Lejárati javaslat lekérése során hiba történt'
+    });
+  }
+});
+
+/**
  * POST /api/v1/households/:id/inventory
  * Új tétel hozzáadása a háztartás készletéhez
  */
 router.post('/:id/inventory', [
   authenticateToken,
-  body('name').trim().isLength({ min: 1, max: 255 }).withMessage('Termék neve kötelező'),
-  body('quantity').isInt({ min: 1 }).withMessage('Mennyiség pozitív szám kell legyen'),
-  body('unit').optional().trim().isLength({ max: 50 }),
-  body('location').optional().trim().isLength({ max: 100 }),
-  body('expiryDate').optional().isISO8601().withMessage('Érvényes dátum szükséges'),
-  body('barcode').optional().trim().isLength({ max: 50 })
+  body('custom_name').trim().isLength({ min: 1, max: 255 }).withMessage('Termék neve kötelező'),
+  body('quantity').isNumeric().withMessage('Mennyiség számnak kell lennie'),
+  body('unit').optional({ nullable: true }).trim().isLength({ max: 50 }),
+  body('location').optional({ nullable: true }).trim().isLength({ max: 100 }),
+  body('expiry_date').optional({ nullable: true }).custom((value) => {
+    if (value === null || value === undefined || value === '') return true;
+    return !isNaN(Date.parse(value));
+  }).withMessage('Érvényes dátum szükséges'),
+  body('barcode').optional({ nullable: true }).trim().isLength({ max: 50 }),
+  body('price').optional({ nullable: true }).custom((value) => {
+    if (value === null || value === undefined || value === '') return true;
+    return !isNaN(parseFloat(value)) && parseFloat(value) >= 0;
+  }).withMessage('Az árnak pozitív számnak kell lennie'),
+  body('notes').optional({ nullable: true }).trim().isLength({ max: 500 })
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -696,7 +749,9 @@ router.post('/:id/inventory', [
     }
 
     const householdId = req.params.id;
-    const { name, quantity, unit, location, expiryDate, barcode, notes } = req.body;
+    const { custom_name, quantity, unit, location, expiry_date, barcode, notes, price } = req.body;
+    
+    console.log('📦 Adding inventory item:', { custom_name, quantity, expiry_date, location, barcode });
     
     // Check if user is member of household
     const memberCheck = await query(`
@@ -722,8 +777,8 @@ router.post('/:id/inventory', [
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
     `, [
-      householdId, name, quantity, unit || 'db', location || 'Egyéb',
-      expiryDate || null, notes || null, req.user.id
+      householdId, custom_name, quantity, unit || 'db', location || 'Egyéb',
+      expiry_date || null, notes || null, req.user.id
     ]);
     
     // Re-enable audit trigger

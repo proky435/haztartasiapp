@@ -167,8 +167,8 @@ function DateOCRScanner({ onDateDetected, onClose }) {
   };
 
   return (
-    <div className="date-ocr-overlay">
-      <div className="date-ocr-container">
+    <div className="date-ocr-overlay" onClick={handleClose}>
+      <div className="date-ocr-container" onClick={(e) => e.stopPropagation()}>
         <div className="ocr-header">
           <h3>Lejárati Dátum Felismerése</h3>
           <button className="close-button" onClick={handleClose}>×</button>
@@ -215,7 +215,10 @@ function DateOCRScanner({ onDateDetected, onClose }) {
               </div>
               <div className="ocr-controls">
                 <button 
-                  onClick={captureAndScan} 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    captureAndScan();
+                  }}
                   disabled={isScanning || !stream}
                   className="scan-button"
                 >
