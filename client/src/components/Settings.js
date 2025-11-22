@@ -31,6 +31,16 @@ function Settings({ user, currentHousehold, onUpdateProfile, onShowHouseholdMana
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
   const [isCheckingPush, setIsCheckingPush] = useState(true);
+  
+  // Cron scheduler beállítások
+  const [cronSettings, setCronSettings] = useState({
+    cron_enabled: true,
+    low_stock_cron: '0 9 * * *',
+    expiry_warning_cron: '0 8 * * *',
+    shopping_reminder_cron: '0 8 * * 1'
+  });
+  const [cronStatus, setCronStatus] = useState(null);
+  const [isLoadingCron, setIsLoadingCron] = useState(true);
 
   // User prop változásának figyelése
   useEffect(() => {
@@ -98,6 +108,28 @@ function Settings({ user, currentHousehold, onUpdateProfile, onShowHouseholdMana
     };
     
     checkPushStatus();
+  }, []);
+
+  // Cron beállítások betöltése
+  useEffect(() => {
+    const loadCronSettings = async () => {
+      try {
+        setIsLoadingCron(true);
+        const response = await api.get('/system-settings/cron');
+        if (response.settings) {
+          setCronSettings(response.settings);
+        }
+        if (response.status) {
+          setCronStatus(response.status);
+        }
+      } catch (error) {
+        console.error('Error loading cron settings:', error);
+      } finally {
+        setIsLoadingCron(false);
+      }
+    };
+    
+    loadCronSettings();
   }, []);
 
   const handleInputChange = (e) => {
@@ -223,6 +255,31 @@ function Settings({ user, currentHousehold, onUpdateProfile, onShowHouseholdMana
     } catch (error) {
       console.error('Error triggering scheduler:', error);
       alert('❌ Hiba: ' + (error.message || 'Scheduler futtatása sikertelen'));
+    }
+  };
+
+  // Cron toggle kezelő
+  const handleCronToggle = async () => {
+    try {
+      const newEnabled = !cronSettings.cron_enabled;
+      
+      await api.put('/system-settings/cron', {
+        ...cronSettings,
+        cron_enabled: newEnabled
+      });
+      
+      setCronSettings(prev => ({ ...prev, cron_enabled: newEnabled }));
+      
+      // Frissítjük a státuszt
+      const response = await api.get('/system-settings/cron');
+      if (response.status) {
+        setCronStatus(response.status);
+      }
+      
+      alert(newEnabled ? '✅ Automatikus értesítések bekapcsolva' : '⚠️ Automatikus értesítések kikapcsolva');
+    } catch (error) {
+      console.error('Error toggling cron:', error);
+      alert('❌ Hiba: ' + (error.message || 'Cron beállítás sikertelen'));
     }
   };
 
@@ -508,6 +565,64 @@ function Settings({ user, currentHousehold, onUpdateProfile, onShowHouseholdMana
                           🤖 Automatikus értesítések most
                         </button>
                         <small>Teszt: ellenőrizd az értesítéseket | Automatikus: készlet, lejárat, vásárlás</small>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <h4 style={{ marginTop: '20px' }}>⏰ Automatikus Ütemezés (Cron)</h4>
+              <div className="cron-settings">
+                {isLoadingCron ? (
+                  <p>Betöltés...</p>
+                ) : (
+                  <>
+                    <div className="setting-item">
+                      <div className="setting-info">
+                        <label>Automatikus értesítések ütemezése</label>
+                        <span className="setting-description">
+                          Napi automatikus ellenőrzés és értesítések küldése
+                        </span>
+                      </div>
+                      <label className="switch">
+                        <input
+                          type="checkbox"
+                          checked={cronSettings.cron_enabled}
+                          onChange={handleCronToggle}
+                        />
+                        <span className="slider"></span>
+                      </label>
+                    </div>
+
+                    {cronSettings.cron_enabled && cronStatus && (
+                      <div className="cron-status">
+                        <p className="cron-status-title">📅 Ütemezett Feladatok:</p>
+                        <ul className="cron-schedule-list">
+                          <li>
+                            <span className="cron-icon">📦</span>
+                            <strong>Készlet ellenőrzés:</strong> Naponta 9:00
+                            <span className={`status-badge ${cronStatus.jobs.lowStock ? 'active' : 'inactive'}`}>
+                              {cronStatus.jobs.lowStock ? '✓ Aktív' : '✗ Inaktív'}
+                            </span>
+                          </li>
+                          <li>
+                            <span className="cron-icon">⏰</span>
+                            <strong>Lejárati figyelmeztetés:</strong> Naponta 8:00
+                            <span className={`status-badge ${cronStatus.jobs.expiry ? 'active' : 'inactive'}`}>
+                              {cronStatus.jobs.expiry ? '✓ Aktív' : '✗ Inaktív'}
+                            </span>
+                          </li>
+                          <li>
+                            <span className="cron-icon">🛒</span>
+                            <strong>Vásárlási emlékeztető:</strong> Hétfő 8:00
+                            <span className={`status-badge ${cronStatus.jobs.shopping ? 'active' : 'inactive'}`}>
+                              {cronStatus.jobs.shopping ? '✓ Aktív' : '✗ Inaktív'}
+                            </span>
+                          </li>
+                        </ul>
+                        <small className="cron-info">
+                          ℹ️ Az értesítések csak akkor kerülnek kiküldésre, ha van releváns adat (pl. elfogyó termék)
+                        </small>
                       </div>
                     )}
                   </>

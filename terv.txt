@@ -6,7 +6,7 @@
 ⭐ Értékelési rendszer: 5 csillagos értékelés + kommentek
 🔍 Fejlett keresés: Szűrés kalória, allergiák, diéta típusok szerint
 📊 Táplálkozási információk: Kalória, fehérje, szénhidrát számítás
-👨‍👩‍👧‍👦 Családi kedvencek: Családtagok kedvenc receptjeinek jelölése
+👨‍👩‍👧‍👦 Családi kedvencek: Családtagok kedvenc receptjeinek jelölése 
 🔄 Prioritás: Közepes
 🛒 Bevásárlólista integráció: Recept alapján automatikus lista generálás
 📅 Étkezési terv: Heti menü tervezés receptek alapján
@@ -16,8 +16,8 @@
 🏠 Háztartás kezelés fejlesztése
 
 🔥 Prioritás: Magas
-📊 Költségvetés követés: Havi/heti költségvetés beállítás és nyomon követés
-📈 Statisztikák: Kiadások elemzése kategóriánként, trendek
+📊 Költségvetés követés: Havi/heti költségvetés beállítás és nyomon követés ❌
+📈 Statisztikák: Kiadások elemzése kategóriánként, trendek 
 🔔 Intelligens értesítések: Lejárat előtti figyelmeztetések
 📱 Mobil app: React Native vagy PWA fejlesztés ❌
 🛍️ Bolt integráció: Online áruházak API kapcsolat árakhoz
@@ -47,7 +47,7 @@
 
 🔥 Prioritás: Magas
 🌙 Sötét/világos téma: Teljes téma rendszer implementálás ❌
-📱 Reszponzív design: Tablet és mobil optimalizálás
+📱 Reszponzív design: Tablet és mobil optimalizálás 
 ♿ Akadálymentesítés: ARIA labelek, képernyőolvasó támogatás
 🎨 Animációk: Smooth átmenetek, loading animációk
 🔍 Gyors keresés: Global search minden modulban
@@ -106,3 +106,140 @@ AI javaslatok
 Bolt integráció
 Mobil app
 Analitika dashboard
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+🚀 Javasolt Fejlesztések
+1. Automatikus Scheduler (Cron Job) ⏰
+Prioritás: MAGAS
+
+Jelenleg manuálisan kell futtatni a scheduler-t. Automatizáljuk!
+
+Implementáció:
+
+node-cron library
+Naponta 9:00 - készlet ellenőrzés
+Naponta 8:00 - lejárati figyelmeztetés
+Hétfő 8:00 - vásárlási emlékeztetők
+Előny: Felhasználók automatikusan kapják az értesítéseket
+
+2. Barcode Scanner Integráció 📷
+Prioritás: MAGAS
+
+Láttam, hogy van barcode mező az inventory-ban, de nincs scanner!
+
+Funkciók:
+
+Termék hozzáadása vonalkód alapján
+Automatikus termék információ (név, kategória, kép)
+Gyors készlet frissítés
+Lejárati dátum beolvasás (ha van a csomagoláson)
+API: Open Food Facts API (ingyenes)
+
+3. Receptek Továbbfejlesztése 🍳
+Prioritás: KÖZEPES
+
+Hiányzó funkciók:
+
+✅ Recept alapján automatikus bevásárlólista generálás
+✅ Hozzávalók ellenőrzése készlet alapján
+⚠️ Recept javaslatok a meglévő készlet alapján
+⚠️ Heti menü tervezés
+⚠️ Táplálkozási információk (kalória, fehérje, stb.)
+4. Költségvetés & Pénzügyek 💰
+Prioritás: KÖZEPES
+
+Új funkciók:
+
+Havi költségvetés beállítása kategóriánként
+Kiadások tracking (bevásárlás, közművek, egyéb)
+Grafikus riportok (havi/éves összehasonlítás)
+Költségvetési figyelmeztetések
+Megtakarítási célok
+5. AI-alapú Javaslatok 🤖
+Prioritás: ALACSONY (de menő)
+
+Funkciók:
+
+Intelligens bevásárlási javaslatok (gépi tanulás)
+Szezonális termék ajánlások
+Pazarlás csökkentési tippek
+Recept javaslatok preferenciák alapján
+Optimális vásárlási időpont javaslat
+Tech: TensorFlow.js vagy OpenAI API
+
+6. Közösségi Funkciók 👥
+Prioritás: ALACSONY
+
+Funkciók:
+
+Háztartások közötti recept megosztás (már van!)
+Közös bevásárlólista több háztartás között
+Termék ajánlások (pl. "Ezt is megvették...")
+Háztartási tippek megosztása
+Leaderboard (ki pazarol legkevesebbet?)
+7. Offline Support (PWA) 📱
+Prioritás: KÖZEPES
+
+Funkciók:
+
+Service Worker cache stratégia
+Offline adatszinkronizálás
+Background sync
+App telepítés (Add to Home Screen)
+Push notifications offline-ban is
+8. Fejlett Statisztikák 📊
+Prioritás: KÖZEPES
+
+Új riportok:
+
+Fogyasztási trendek (növekvő/csökkenő)
+Szezonális mintázatok
+Kategóriánkénti breakdown
+Összehasonlítás előző hónapokkal
+Export CSV/PDF formátumban
+9. Gamification 🎮
+Prioritás: ALACSONY (de motiváló)
+
+Funkciók:
+
+Pontrendszer (kevesebb pazarlás = több pont)
+Achievementek (pl. "1 hónap 0 pazarlás")
+Háztartási kihívások
+Havi célok
+Jutalmak (virtuális vagy valós)
+10. Integráció Online Boltokkal 🛒
+Prioritás: ALACSONY
+
+Funkciók:
+
+Bevásárlólista export (Tesco, Auchan, Spar)
+Árak összehasonlítása
+Automatikus rendelés
+Akciók figyelése
+🎯 Ajánlott Prioritási Sorrend:
+Rövid távú (1-2 hét):
+✅ Automatikus Scheduler - azonnal hasznosítható
+✅ Barcode Scanner - nagy UX javulás
+✅ PWA Offline Support - mobil élmény javítása
+Közép távú (1 hónap):
+Fejlett Statisztikák - adatok jobban kihasználása
+Költségvetés modul - új funkció terület
+Recept továbbfejlesztés - meglévő funkció bővítése
+Hosszú távú (2-3 hónap):
+AI javaslatok - innovatív funkció
+Gamification - user engagement
+Közösségi funkciók - platform növekedés
+Online bolt integráció - monetizáció

@@ -16,6 +16,7 @@ const logger = require('./utils/logger');
 const { connectDatabase } = require('./database/connection');
 const errorHandler = require('./middleware/errorHandler');
 const notFoundHandler = require('./middleware/notFoundHandler');
+const cronScheduler = require('./services/cronScheduler');
 
 // Route imports
 const authRoutes = require('./routes/auth');
@@ -41,6 +42,7 @@ const householdSettingsRoutes = require('./routes/household-settings');
 const userSettingsRoutes = require('./routes/user-settings');
 const pushNotificationRoutes = require('./routes/push-notifications');
 const notificationSchedulerRoutes = require('./routes/notification-scheduler');
+const systemSettingsRoutes = require('./routes/system-settings');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -202,6 +204,7 @@ apiRouter.use('/households', householdSettingsRoutes);
 apiRouter.use('/users', userSettingsRoutes);
 apiRouter.use('/push', pushNotificationRoutes);
 apiRouter.use('/scheduler', notificationSchedulerRoutes);
+apiRouter.use('/system-settings', systemSettingsRoutes);
 
 app.use(`/api/${process.env.API_VERSION || 'v1'}`, apiRouter);
 
@@ -298,12 +301,19 @@ async function startServer() {
             cert: fs.readFileSync(certPath)
           };
           
-          server = https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', () => {
+          server = https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', async () => {
             logger.info(`🚀 Háztartási App Backend elindult! (HTTPS)`);
             logger.info(`📍 Port: ${PORT}`);
             logger.info(`🌍 Environment: ${process.env.NODE_ENV}`);
             logger.info(`📚 API Docs: https://192.168.0.19:${PORT}/api/docs`);
             logger.info(`❤️  Health Check: https://192.168.0.19:${PORT}/health`);
+            
+            // Cron scheduler indítása
+            try {
+              await cronScheduler.startCronJobs();
+            } catch (error) {
+              logger.error('Failed to start cron jobs:', error);
+            }
           });
         } else {
           logger.warn('SSL tanúsítványok nem találhatók, HTTP módra váltás...');
@@ -336,6 +346,7 @@ async function startServer() {
     // Graceful shutdown
     process.on('SIGTERM', async () => {
       logger.info('SIGTERM received, shutting down gracefully');
+      cronScheduler.stopCronJobs();
       server.close(() => {
         logger.info('Process terminated');
         process.exit(0);
@@ -344,6 +355,7 @@ async function startServer() {
 
     process.on('SIGINT', async () => {
       logger.info('SIGINT received, shutting down gracefully');
+      cronScheduler.stopCronJobs();
       if (redisClient) {
         await redisClient.quit();
       }
