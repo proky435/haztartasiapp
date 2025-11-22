@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import shoppingListService from '../services/shoppingListService';
+import { getAutoSuggestions } from '../services/consumptionService';
 import './ShoppingList.css';
 
 function ShoppingList({ onItemsChange, currentHousehold }) {
   const [newItem, setNewItem] = useState('');
   const [items, setItems] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showSuggestionsModal, setShowSuggestionsModal] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   useEffect(() => {
     loadShoppingItems();
@@ -56,6 +60,47 @@ function ShoppingList({ onItemsChange, currentHousehold }) {
       setItems([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleShowSuggestions = async () => {
+    if (!currentHousehold?.id) {
+      alert('Nincs kiválasztott háztartás');
+      return;
+    }
+
+    try {
+      setLoadingSuggestions(true);
+      setShowSuggestionsModal(true);
+      const response = await getAutoSuggestions(currentHousehold.id);
+      
+      console.log('Suggestions response:', response);
+      
+      if (response && response.status === 'success') {
+        setSuggestions(response.suggestions || []);
+      } else {
+        setSuggestions([]);
+      }
+    } catch (error) {
+      console.error('Error loading suggestions:', error);
+      alert('Hiba a javaslatok betöltésekor: ' + (error.message || 'Ismeretlen hiba'));
+      setShowSuggestionsModal(false);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  const handleAddSuggestion = async (suggestion) => {
+    try {
+      await shoppingListService.addItemToDefaultList({
+        name: suggestion.productName,
+        quantity: suggestion.suggestedQuantity || 1
+      });
+      await loadShoppingItems();
+      alert(`${suggestion.productName} hozzáadva a listához!`);
+    } catch (error) {
+      console.error('Error adding suggestion:', error);
+      alert('Hiba a tétel hozzáadásakor');
     }
   };
 
@@ -152,9 +197,18 @@ function ShoppingList({ onItemsChange, currentHousehold }) {
     <div className="shopping-list-container">
       <div className="shopping-header">
         <h2>Bevásárlólista</h2>
-        <span className="item-count">
-          {items.filter(item => !item.purchased && !item.isPurchased).length} tétel
-        </span>
+        <div className="header-actions">
+          <button 
+            className="suggestions-button"
+            onClick={handleShowSuggestions}
+            title="Intelligens javaslatok"
+          >
+            💡 Javaslatok
+          </button>
+          <span className="item-count">
+            {items.filter(item => !item.purchased && !item.isPurchased).length} tétel
+          </span>
+        </div>
       </div>
 
       <form onSubmit={handleAddItem} className="add-item-form">
@@ -228,6 +282,60 @@ function ShoppingList({ onItemsChange, currentHousehold }) {
           <p className="purchased-hint">
             Kattints a "Beolvas" gombra a megvásárolt termékek készletbe való visszahelyezéséhez
           </p>
+        </div>
+      )}
+
+      {/* Suggestions Modal */}
+      {showSuggestionsModal && (
+        <div className="modal-overlay" onClick={() => setShowSuggestionsModal(false)}>
+          <div className="suggestions-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>💡 Bevásárlási Javaslatok</h3>
+              <button className="modal-close" onClick={() => setShowSuggestionsModal(false)}>×</button>
+            </div>
+            
+            <div className="modal-body">
+              {loadingSuggestions ? (
+                <div className="loading-state">
+                  <div className="spinner"></div>
+                  <p>Javaslatok betöltése...</p>
+                </div>
+              ) : suggestions.length === 0 ? (
+                <div className="no-suggestions">
+                  <p>📭 Jelenleg nincs javaslat</p>
+                  <small>A rendszer elemzi a fogyasztási szokásaidat</small>
+                </div>
+              ) : (
+                <div className="suggestions-list">
+                  {suggestions.map((suggestion, index) => (
+                    <div key={index} className="suggestion-card">
+                      <div className="suggestion-info">
+                        <h4>{suggestion.productName}</h4>
+                        {suggestion.brand && <span className="brand">{suggestion.brand}</span>}
+                        <p className="reason">{suggestion.message}</p>
+                        <div className="suggestion-meta">
+                          <span className={`confidence ${suggestion.confidence}`}>
+                            {suggestion.confidence === 'high' ? '🎯 Magas' : '📊 Közepes'} bizonyosság
+                          </span>
+                          {suggestion.currentQuantity !== undefined && (
+                            <span className="current-stock">
+                              Jelenlegi: {suggestion.currentQuantity} {suggestion.unit}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <button 
+                        className="add-suggestion-btn"
+                        onClick={() => handleAddSuggestion(suggestion)}
+                      >
+                        + Hozzáad
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

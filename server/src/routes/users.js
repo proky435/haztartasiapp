@@ -112,8 +112,33 @@ router.put('/profile', [
       changes: Object.keys(req.body)
     });
 
+    // Frissített profil lekérése
+    const result = await query(`
+      SELECT 
+        u.id, u.email, u.name, u.email_verified, u.last_login, u.created_at,
+        us.notification_preferences, us.ui_preferences, us.language
+      FROM users u
+      LEFT JOIN user_settings us ON u.id = us.user_id
+      WHERE u.id = $1
+    `, [req.user.id]);
+
+    const user = result.rows[0];
+
     res.json({
-      message: 'Profil sikeresen frissítve'
+      message: 'Profil sikeresen frissítve',
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        emailVerified: user.email_verified,
+        lastLogin: user.last_login,
+        createdAt: user.created_at,
+        settings: {
+          notifications: user.notification_preferences || {},
+          ui: user.ui_preferences || {},
+          language: user.language || 'hu'
+        }
+      }
     });
 
   } catch (error) {

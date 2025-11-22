@@ -582,6 +582,12 @@ router.put('/:id', [
     }
 
     updateFields.push(`updated_at = NOW()`);
+    
+    // Ha mennyiség változik, frissítjük a last_quantity_change-t is
+    if (req.body.quantity !== undefined) {
+      updateFields.push(`last_quantity_change = NOW()`);
+    }
+    
     updateValues.push(inventoryId);
 
     // Disable audit trigger temporarily and handle manually
@@ -597,10 +603,17 @@ router.put('/:id', [
     // Re-enable audit trigger
     await query('ALTER TABLE household_inventory ENABLE TRIGGER inventory_audit_trigger');
     
-    // Manual audit log entry
+    // Manual audit log entry - Consumption tracking
     if (req.body.quantity !== undefined) {
-      const oldQuantity = existingItem.quantity;
+      const oldQuantity = parseFloat(existingItem.quantity);
       const newQuantity = parseFloat(req.body.quantity);
+      const quantityChange = newQuantity - oldQuantity;
+      
+      // Determine change type
+      let changeType = 'update';
+      if (quantityChange < 0) {
+        changeType = 'consume'; // Fogyasztás
+      }
       
       await query(`
         INSERT INTO inventory_changes (
@@ -608,8 +621,9 @@ router.put('/:id', [
           old_quantity, new_quantity, quantity_change, reason
         ) VALUES ($1, $2, $3, $4, $5, $6, $7)
       `, [
-        inventoryId, req.user.id, 'update',
-        oldQuantity, newQuantity, newQuantity - oldQuantity, 'Mennyiség módosítása'
+        inventoryId, req.user.id, changeType,
+        oldQuantity, newQuantity, quantityChange, 
+        quantityChange < 0 ? 'Fogyasztás' : 'Mennyiség módosítása'
       ]);
     }
 
@@ -703,6 +717,16 @@ router.delete('/:id', [
     // Disable audit trigger temporarily and handle manually
     await query('ALTER TABLE household_inventory DISABLE TRIGGER inventory_audit_trigger');
     
+    // Determine change type - pazarlás tracking
+    let changeType = 'remove';
+    let reason = 'Termék eltávolítása';
+    
+    // Ha lejárt, akkor 'expire' típus
+    if (existingItem.expiry_date && new Date(existingItem.expiry_date) < new Date()) {
+      changeType = 'expire';
+      reason = 'Lejárt termék eltávolítása';
+    }
+    
     // Manual audit log entry before deletion
     await query(`
       INSERT INTO inventory_changes (
@@ -710,8 +734,8 @@ router.delete('/:id', [
         old_quantity, new_quantity, quantity_change, reason
       ) VALUES ($1, $2, $3, $4, $5, $6, $7)
     `, [
-      inventoryId, req.user.id, 'remove',
-      existingItem.quantity, 0, -existingItem.quantity, 'Termék eltávolítása'
+      inventoryId, req.user.id, changeType,
+      existingItem.quantity, 0, -existingItem.quantity, reason
     ]);
 
     // Delete the item

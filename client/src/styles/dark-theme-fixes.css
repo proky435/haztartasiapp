@@ -2,15 +2,15 @@
 
 /* Force all product list items to have dark backgrounds in dark theme */
 [data-theme="dark"] .product-list-item,
-[data-theme="dark"] .product-list-item *,
+[data-theme="dark"] .product-list-item *:not(.expiry-date):not(.product-price):not(button):not(.product-location),
 html[data-theme="dark"] .product-list-item,
-html[data-theme="dark"] .product-list-item *,
+html[data-theme="dark"] .product-list-item *:not(.expiry-date):not(.product-price):not(button):not(.product-location),
 body[data-theme="dark"] .product-list-item,
-body[data-theme="dark"] .product-list-item *,
+body[data-theme="dark"] .product-list-item *:not(.expiry-date):not(.product-price):not(button):not(.product-location),
 .theme-dark .product-list-item,
-.theme-dark .product-list-item *,
+.theme-dark .product-list-item *:not(.expiry-date):not(.product-price):not(button):not(.product-location),
 .product-list-item.theme-dark,
-.product-list-item.theme-dark * {
+.product-list-item.theme-dark *:not(.expiry-date):not(.product-price):not(button):not(.product-location) {
   background: #1e293b !important;
   background-color: #1e293b !important;
 }
@@ -63,10 +63,10 @@ body[data-theme="dark"] .product-list-item.expires-soon,
   background-color: #334155 !important;
 }
 
-/* Force all children elements to inherit the background - EXCEPT buttons */
+/* Force all children elements to inherit the background - EXCEPT buttons and badges */
 [data-theme="dark"] .product-list-item > *:not(.quantity-controls):not(.delete-button),
-[data-theme="dark"] .product-list-item > * > *:not(button):not(.quantity-controls):not(.delete-button),
-[data-theme="dark"] .product-list-item > * > * > *:not(button):not(.quantity-controls):not(.delete-button) {
+[data-theme="dark"] .product-list-item > * > *:not(button):not(.quantity-controls):not(.delete-button):not(.expiry-date):not(.product-price):not(.product-location),
+[data-theme="dark"] .product-list-item > * > * > *:not(button):not(.quantity-controls):not(.delete-button):not(.expiry-date):not(.product-price):not(.product-location) {
   background: inherit !important;
   background-color: inherit !important;
 }

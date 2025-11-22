@@ -239,6 +239,20 @@ class ProductsService {
       console.error('Error caching frequent product:', error);
     }
   }
+
+  // Termék árának mentése
+  async saveProductPrice(barcode, productName, price) {
+    try {
+      const response = await apiService.post(`/products/${barcode}/price`, {
+        price,
+        productName
+      });
+      return response;
+    } catch (error) {
+      console.error('Save product price error:', error);
+      throw error;
+    }
+  }
 }
 
 // Singleton instance

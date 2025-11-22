@@ -1,0 +1,536 @@
+import React, { useState, useEffect } from 'react';
+import ThemeToggle from './ThemeToggle';
+import api from '../services/api';
+import pushNotificationService from '../services/pushNotificationService';
+import './Settings.css';
+
+function Settings({ user, currentHousehold, onUpdateProfile, onShowHouseholdManager, onNavigateToUtilities }) {
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [formData, setFormData] = useState({
+    name: user.name,
+    email: user.email
+  });
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
+  
+  // Consumption tracking beállítások
+  const [trackingSettings, setTrackingSettings] = useState({
+    consumptionTracking: true,
+    shoppingPatternAnalysis: true,
+    autoSuggestions: true
+  });
+  const [notificationSettings, setNotificationSettings] = useState({
+    lowStockPredictions: true,
+    shoppingPatternSuggestions: true,
+    wasteAlerts: true,
+    weeklySummary: false
+  });
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  
+  // Push notification beállítások
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushSupported, setPushSupported] = useState(false);
+  const [isCheckingPush, setIsCheckingPush] = useState(true);
+
+  // User prop változásának figyelése
+  useEffect(() => {
+    setFormData({
+      name: user.name,
+      email: user.email
+    });
+  }, [user]);
+
+  // Tracking beállítások betöltése
+  useEffect(() => {
+    const loadTrackingSettings = async () => {
+      if (!currentHousehold?.id) return;
+      
+      try {
+        setIsLoadingSettings(true);
+        
+        // Household settings lekérése
+        const householdResponse = await api.get(`/households/${currentHousehold.id}/settings`);
+        if (householdResponse.data) {
+          setTrackingSettings({
+            consumptionTracking: householdResponse.data.consumption_tracking_enabled ?? true,
+            shoppingPatternAnalysis: householdResponse.data.shopping_pattern_analysis_enabled ?? true,
+            autoSuggestions: householdResponse.data.auto_suggestions_enabled ?? true
+          });
+        }
+        
+        // User notification settings lekérése
+        const userResponse = await api.get(`/users/${user.id}/settings`);
+        if (userResponse.data?.consumption_notifications) {
+          setNotificationSettings({
+            lowStockPredictions: userResponse.data.consumption_notifications.low_stock_predictions ?? true,
+            shoppingPatternSuggestions: userResponse.data.consumption_notifications.shopping_pattern_suggestions ?? true,
+            wasteAlerts: userResponse.data.consumption_notifications.waste_alerts ?? true,
+            weeklySummary: userResponse.data.consumption_notifications.weekly_summary ?? false
+          });
+        }
+      } catch (error) {
+        console.error('Error loading tracking settings:', error);
+      } finally {
+        setIsLoadingSettings(false);
+      }
+    };
+    
+    loadTrackingSettings();
+  }, [currentHousehold?.id, user.id]);
+
+  // Push notification állapot ellenőrzése
+  useEffect(() => {
+    const checkPushStatus = async () => {
+      try {
+        setIsCheckingPush(true);
+        const supported = pushNotificationService.isPushNotificationSupported();
+        setPushSupported(supported);
+        
+        if (supported) {
+          const subscribed = await pushNotificationService.isSubscribed();
+          setPushEnabled(subscribed);
+        }
+      } catch (error) {
+        console.error('Error checking push status:', error);
+      } finally {
+        setIsCheckingPush(false);
+      }
+    };
+    
+    checkPushStatus();
+  }, []);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSaveProfile = async () => {
+    if (!formData.name.trim() || !formData.email.trim()) {
+      setSaveMessage('✗ A név és email mező nem lehet üres');
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveMessage('');
+    
+    try {
+      await onUpdateProfile(formData);
+      setSaveMessage('✓ Profil sikeresen frissítve!');
+      setTimeout(() => {
+        setIsEditingProfile(false);
+        setSaveMessage('');
+      }, 1500);
+    } catch (error) {
+      console.error('Profile update error:', error);
+      setSaveMessage('✗ Hiba történt a mentés során');
+      setTimeout(() => {
+        setSaveMessage('');
+      }, 3000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setFormData({
+      name: user.name,
+      email: user.email
+    });
+    setIsEditingProfile(false);
+    setSaveMessage('');
+  };
+
+  // Tracking beállítások mentése
+  const handleTrackingSettingChange = async (setting, value) => {
+    try {
+      setTrackingSettings(prev => ({ ...prev, [setting]: value }));
+      
+      await api.put(`/households/${currentHousehold.id}/settings`, {
+        [`${setting.replace(/([A-Z])/g, '_$1').toLowerCase()}_enabled`]: value
+      });
+    } catch (error) {
+      console.error('Error saving tracking setting:', error);
+      // Visszaállítjuk az előző értéket hiba esetén
+      setTrackingSettings(prev => ({ ...prev, [setting]: !value }));
+    }
+  };
+
+  // Notification beállítások mentése
+  const handleNotificationSettingChange = async (setting, value) => {
+    try {
+      setNotificationSettings(prev => ({ ...prev, [setting]: value }));
+      
+      const updatedSettings = {
+        ...notificationSettings,
+        [setting]: value
+      };
+      
+      await api.put(`/users/${user.id}/settings`, {
+        consumption_notifications: {
+          low_stock_predictions: updatedSettings.lowStockPredictions,
+          shopping_pattern_suggestions: updatedSettings.shoppingPatternSuggestions,
+          waste_alerts: updatedSettings.wasteAlerts,
+          weekly_summary: updatedSettings.weeklySummary
+        }
+      });
+    } catch (error) {
+      console.error('Error saving notification setting:', error);
+      // Visszaállítjuk az előző értéket hiba esetén
+      setNotificationSettings(prev => ({ ...prev, [setting]: !value }));
+    }
+  };
+
+  // Push notification toggle kezelő
+  const handlePushToggle = async () => {
+    try {
+      if (pushEnabled) {
+        // Leiratkozás
+        await pushNotificationService.unsubscribeFromPushNotifications();
+        setPushEnabled(false);
+        alert('✅ Push értesítések kikapcsolva');
+      } else {
+        // Feliratkozás
+        await pushNotificationService.subscribeToPushNotifications();
+        setPushEnabled(true);
+        alert('✅ Push értesítések bekapcsolva');
+      }
+    } catch (error) {
+      console.error('Error toggling push notifications:', error);
+      alert('❌ Hiba: ' + (error.message || 'Push értesítések beállítása sikertelen'));
+    }
+  };
+
+  // Teszt notification küldése
+  const handleSendTestNotification = async () => {
+    try {
+      await pushNotificationService.sendTestNotification();
+      alert('✅ Teszt értesítés elküldve! Nézd meg az értesítéseid.');
+    } catch (error) {
+      console.error('Error sending test notification:', error);
+      alert('❌ Hiba: ' + (error.message || 'Teszt értesítés küldése sikertelen'));
+    }
+  };
+
+  // Automatikus értesítések trigger (scheduler)
+  const handleTriggerScheduler = async () => {
+    try {
+      const response = await api.post('/scheduler/run-all');
+      alert(`✅ ${response.message}\n\nRészletek:\n- Készlet: ${response.details.lowStock.notificationsSent}\n- Lejárat: ${response.details.expiry.notificationsSent}\n- Vásárlás: ${response.details.shopping.notificationsSent}`);
+    } catch (error) {
+      console.error('Error triggering scheduler:', error);
+      alert('❌ Hiba: ' + (error.message || 'Scheduler futtatása sikertelen'));
+    }
+  };
+
+  return (
+    <div className="settings-container">
+      <div className="settings-header">
+        <h2>⚙️ Általános Beállítások</h2>
+        <p>Háztartás: {currentHousehold?.name}</p>
+      </div>
+      
+      <div className="settings-content">
+        {/* Felhasználói beállítások */}
+        <div className="settings-section">
+          <h3>👤 Felhasználói beállítások</h3>
+          
+          {!isEditingProfile ? (
+            <>
+              <div className="profile-display">
+                <div className="profile-field">
+                  <label>Név:</label>
+                  <span>{user.name}</span>
+                </div>
+                <div className="profile-field">
+                  <label>Email:</label>
+                  <span>{user.email}</span>
+                </div>
+              </div>
+              <button 
+                className="settings-action-btn"
+                onClick={() => setIsEditingProfile(true)}
+              >
+                ✏️ Profil szerkesztése
+              </button>
+            </>
+          ) : (
+            <div className="profile-edit-form">
+              <div className="form-group">
+                <label htmlFor="name">Név:</label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className="form-input"
+                  placeholder="Név"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="email">Email:</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="form-input"
+                  placeholder="Email"
+                />
+              </div>
+              
+              {saveMessage && (
+                <div className={`save-message ${saveMessage.includes('✓') ? 'success' : 'error'}`}>
+                  {saveMessage}
+                </div>
+              )}
+              
+              <div className="form-actions">
+                <button 
+                  onClick={handleSaveProfile}
+                  className="save-btn"
+                  disabled={isSaving}
+                >
+                  {isSaving ? '⏳ Mentés...' : '✓ Mentés'}
+                </button>
+                <button 
+                  onClick={handleCancelEdit}
+                  className="cancel-btn"
+                  disabled={isSaving}
+                >
+                  ✕ Mégse
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Háztartás beállítások */}
+        <div className="settings-section">
+          <h3>🏠 Háztartás beállítások</h3>
+          <p>Háztartás kezelése, tagok meghívása</p>
+          <button 
+            className="settings-action-btn"
+            onClick={onShowHouseholdManager}
+          >
+            Háztartások kezelése
+          </button>
+        </div>
+
+        {/* Téma beállítások */}
+        <div className="settings-section">
+          <h3>🎨 Téma beállítások</h3>
+          <p>Alkalmazás megjelenésének testreszabása</p>
+          <div className="theme-settings">
+            <ThemeToggle />
+          </div>
+        </div>
+
+        {/* Fogyasztás Tracking Beállítások */}
+        <div className="settings-section">
+          <h3>📊 Fogyasztás Tracking</h3>
+          <p>Automatikus fogyasztási statisztikák és javaslatok</p>
+          
+          {isLoadingSettings ? (
+            <div className="loading-settings">⏳ Beállítások betöltése...</div>
+          ) : (
+            <>
+              <div className="tracking-settings">
+                <div className="setting-item">
+                  <div className="setting-info">
+                    <label>Fogyasztás követése</label>
+                    <span className="setting-description">
+                      Automatikus rögzítés amikor termékek mennyisége csökken
+                    </span>
+                  </div>
+                  <label className="switch">
+                    <input
+                      type="checkbox"
+                      checked={trackingSettings.consumptionTracking}
+                      onChange={(e) => handleTrackingSettingChange('consumptionTracking', e.target.checked)}
+                    />
+                    <span className="slider"></span>
+                  </label>
+                </div>
+
+                <div className="setting-item">
+                  <div className="setting-info">
+                    <label>Vásárlási mintázat elemzés</label>
+                    <span className="setting-description">
+                      Elemzi mikor és milyen gyakran vásárolsz termékeket
+                    </span>
+                  </div>
+                  <label className="switch">
+                    <input
+                      type="checkbox"
+                      checked={trackingSettings.shoppingPatternAnalysis}
+                      onChange={(e) => handleTrackingSettingChange('shoppingPatternAnalysis', e.target.checked)}
+                    />
+                    <span className="slider"></span>
+                  </label>
+                </div>
+
+                <div className="setting-item">
+                  <div className="setting-info">
+                    <label>Automatikus javaslatok</label>
+                    <span className="setting-description">
+                      Bevásárlási javaslatok fogyasztás és mintázatok alapján
+                    </span>
+                  </div>
+                  <label className="switch">
+                    <input
+                      type="checkbox"
+                      checked={trackingSettings.autoSuggestions}
+                      onChange={(e) => handleTrackingSettingChange('autoSuggestions', e.target.checked)}
+                    />
+                    <span className="slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <h4 style={{ marginTop: '20px' }}>🔔 Értesítési beállítások</h4>
+              <div className="notification-settings">
+                <div className="setting-item">
+                  <div className="setting-info">
+                    <label>Készlet elfogyási előrejelzések</label>
+                    <span className="setting-description">
+                      Értesítés ha egy termék hamarosan elfogyhat
+                    </span>
+                  </div>
+                  <label className="switch">
+                    <input
+                      type="checkbox"
+                      checked={notificationSettings.lowStockPredictions}
+                      onChange={(e) => handleNotificationSettingChange('lowStockPredictions', e.target.checked)}
+                    />
+                    <span className="slider"></span>
+                  </label>
+                </div>
+
+                <div className="setting-item">
+                  <div className="setting-info">
+                    <label>Vásárlási mintázat javaslatok</label>
+                    <span className="setting-description">
+                      Értesítés vásárlási szokások alapján
+                    </span>
+                  </div>
+                  <label className="switch">
+                    <input
+                      type="checkbox"
+                      checked={notificationSettings.shoppingPatternSuggestions}
+                      onChange={(e) => handleNotificationSettingChange('shoppingPatternSuggestions', e.target.checked)}
+                    />
+                    <span className="slider"></span>
+                  </label>
+                </div>
+
+                <div className="setting-item">
+                  <div className="setting-info">
+                    <label>Pazarlás figyelmeztetések</label>
+                    <span className="setting-description">
+                      Értesítés lejárt vagy megromlott termékekről
+                    </span>
+                  </div>
+                  <label className="switch">
+                    <input
+                      type="checkbox"
+                      checked={notificationSettings.wasteAlerts}
+                      onChange={(e) => handleNotificationSettingChange('wasteAlerts', e.target.checked)}
+                    />
+                    <span className="slider"></span>
+                  </label>
+                </div>
+
+                <div className="setting-item">
+                  <div className="setting-info">
+                    <label>Heti összefoglaló</label>
+                    <span className="setting-description">
+                      Heti statisztika emailben
+                    </span>
+                  </div>
+                  <label className="switch">
+                    <input
+                      type="checkbox"
+                      checked={notificationSettings.weeklySummary}
+                      onChange={(e) => handleNotificationSettingChange('weeklySummary', e.target.checked)}
+                    />
+                    <span className="slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <h4 style={{ marginTop: '20px' }}>📱 Push Értesítések</h4>
+              <div className="push-notification-settings">
+                {!pushSupported ? (
+                  <div className="push-not-supported">
+                    <p>❌ Push értesítések nem támogatottak ebben a böngészőben</p>
+                    <small>Használj modern böngészőt (Chrome, Firefox, Edge)</small>
+                  </div>
+                ) : isCheckingPush ? (
+                  <p>Ellenőrzés...</p>
+                ) : (
+                  <>
+                    <div className="setting-item">
+                      <div className="setting-info">
+                        <label>Push értesítések engedélyezése</label>
+                        <span className="setting-description">
+                          Azonnali értesítések ezen az eszközön
+                        </span>
+                      </div>
+                      <label className="switch">
+                        <input
+                          type="checkbox"
+                          checked={pushEnabled}
+                          onChange={handlePushToggle}
+                        />
+                        <span className="slider"></span>
+                      </label>
+                    </div>
+
+                    {pushEnabled && (
+                      <div className="push-test-section">
+                        <button 
+                          className="test-notification-btn"
+                          onClick={handleSendTestNotification}
+                        >
+                          🧪 Teszt értesítés küldése
+                        </button>
+                        <button 
+                          className="scheduler-trigger-btn"
+                          onClick={handleTriggerScheduler}
+                        >
+                          🤖 Automatikus értesítések most
+                        </button>
+                        <small>Teszt: ellenőrizd az értesítéseket | Automatikus: készlet, lejárat, vásárlás</small>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Közműbeállítások */}
+        <div className="settings-section">
+          <h3>🔌 Közműbeállítások</h3>
+          <p>A közműbeállítások a Közművek menüpontban érhetők el</p>
+          <button 
+            className="settings-action-btn"
+            onClick={onNavigateToUtilities}
+          >
+            Közművek megnyitása
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default Settings;

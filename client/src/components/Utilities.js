@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import utilitiesService from '../services/utilitiesService';
 import UtilitySettings from './UtilitySettings';
+import OtherExpenses from './OtherExpenses';
 import LoadingSpinner from './LoadingSpinner';
 import './Utilities.css';
 
@@ -1075,6 +1076,9 @@ const Utilities = ({ currentHousehold }) => {
           </button>
         </div>
       </div>
+
+      {/* Egyéb költségek */}
+      <OtherExpenses currentHousehold={currentHousehold} />
 
       {/* Mérések listája */}
       <div className="utilities-readings">

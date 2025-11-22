@@ -3,6 +3,7 @@ const { body, param, query: queryValidator, validationResult } = require('expres
 const { query } = require('../database/connection');
 const { authenticateToken, optionalAuth } = require('../middleware/auth');
 const openFoodFactsService = require('../services/openFoodFacts');
+const productPriceService = require('../services/productPriceService');
 const logger = require('../utils/logger');
 
 const router = express.Router();
@@ -230,16 +231,24 @@ router.get('/barcode/:barcode', [
       }
     }
 
+    // Get saved price if user is authenticated
+    let savedPrice = null;
+    if (req.user?.id) {
+      savedPrice = await productPriceService.getLatestPrice(req.user.id, barcode);
+    }
+
     logger.info('Product found by barcode', {
       barcode,
       productName: product.name,
-      userId: req.user?.id
+      userId: req.user?.id,
+      hasSavedPrice: !!savedPrice
     });
 
     res.json({
       product: {
         ...product,
-        source: 'openfoodfacts'
+        source: 'openfoodfacts',
+        savedPrice: savedPrice
       }
     });
 
@@ -573,6 +582,63 @@ router.post('/barcode/:barcode/rename', [
     res.status(500).json({
       error: 'Szerver hiba',
       message: 'Termék átnevezése során hiba történt'
+    });
+  }
+});
+
+/**
+ * POST /api/v1/products/:barcode/price
+ * Termék árának mentése vagy frissítése
+ */
+router.post('/:barcode/price', [
+  authenticateToken,
+  param('barcode')
+    .isLength({ min: 8, max: 20 })
+    .withMessage('A vonalkód 8-20 karakter hosszú kell legyen'),
+  body('price')
+    .isFloat({ min: 0 })
+    .withMessage('Az árnak pozitív számnak kell lennie'),
+  body('productName')
+    .trim()
+    .isLength({ min: 1, max: 255 })
+    .withMessage('A termék neve kötelező')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        error: 'Érvénytelen adatok',
+        details: errors.array()
+      });
+    }
+
+    const { barcode } = req.params;
+    const { price, productName } = req.body;
+
+    const savedPrice = await productPriceService.savePrice(
+      req.user.id,
+      barcode,
+      productName,
+      price
+    );
+
+    logger.info('Product price saved', {
+      barcode,
+      productName,
+      price,
+      userId: req.user.id
+    });
+
+    res.json({
+      message: 'Ár sikeresen mentve',
+      price: savedPrice
+    });
+
+  } catch (error) {
+    logger.logError(error, req, { operation: 'saveProductPrice', barcode: req.params.barcode });
+    res.status(500).json({
+      error: 'Szerver hiba',
+      message: 'Ár mentése során hiba történt'
     });
   }
 });

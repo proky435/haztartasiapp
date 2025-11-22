@@ -367,6 +367,31 @@ router.post('/:id/items', [
     ]);
 
     const item = result.rows[0];
+    const householdId = accessResult.rows[0].household_id;
+
+    // Shopping history rögzítése
+    try {
+      await query(`
+        INSERT INTO shopping_list_item_history (
+          household_id, product_master_id, custom_name, custom_brand,
+          added_to_list_date, quantity, unit, source,
+          shopping_list_id, shopping_list_item_id, added_by_user_id
+        ) VALUES ($1, $2, $3, $4, NOW(), $5, $6, $7, $8, $9, $10)
+      `, [
+        householdId,
+        product_master_id || null,
+        custom_name || null,
+        custom_brand || null,
+        quantity,
+        unit,
+        'manual', // source - később lehet auto_suggestion is
+        listId,
+        item.id,
+        req.user.id
+      ]);
+    } catch (historyError) {
+      logger.warn('Shopping history rögzítése sikertelen:', historyError);
+    }
 
     logger.info('Shopping list item added', {
       itemId: item.id,
@@ -467,11 +492,45 @@ router.put('/items/:itemId/purchase', [
       updateFields.push(`store = NULL`);
     }
 
+    // Lekérjük az item adatokat a history frissítéshez
+    const itemDataResult = await query(`
+      SELECT sli.*, sl.household_id
+      FROM shopping_list_items sli
+      JOIN shopping_lists sl ON sli.shopping_list_id = sl.id
+      WHERE sli.id = $1
+    `, [itemId]);
+    
+    const itemData = itemDataResult.rows[0];
+
     await query(`
       UPDATE shopping_list_items 
       SET ${updateFields.join(', ')}, updated_at = NOW()
       WHERE id = $1
     `, updateValues);
+
+    // Shopping history frissítése - completed_date
+    if (purchased && itemData) {
+      try {
+        await query(`
+          UPDATE shopping_list_item_history
+          SET completed_date = NOW()
+          WHERE shopping_list_item_id = $1 AND completed_date IS NULL
+        `, [itemId]);
+      } catch (historyError) {
+        logger.warn('Shopping history frissítése sikertelen:', historyError);
+      }
+    } else if (!purchased && itemData) {
+      // Ha visszavonjuk a vásárlást, töröljük a completed_date-et
+      try {
+        await query(`
+          UPDATE shopping_list_item_history
+          SET completed_date = NULL
+          WHERE shopping_list_item_id = $1
+        `, [itemId]);
+      } catch (historyError) {
+        logger.warn('Shopping history frissítése sikertelen:', historyError);
+      }
+    }
 
     logger.info('Shopping list item purchase status updated', {
       itemId,

@@ -610,11 +610,11 @@ router.get('/:id/inventory', authenticateToken, async (req, res) => {
       SELECT 
         hi.*,
         hi.custom_name as product_name,
-        NULL as barcode,
         NULL as brand,
         NULL as category,
         NULL as image_url,
         NULL as nutrition_data,
+        pp.price as saved_price,
         CASE 
           WHEN hi.expiry_date <= CURRENT_DATE THEN 'expired'
           WHEN hi.expiry_date <= CURRENT_DATE + INTERVAL '3 days' THEN 'critical'
@@ -622,9 +622,10 @@ router.get('/:id/inventory', authenticateToken, async (req, res) => {
           ELSE 'good'
         END as expiry_status
       FROM household_inventory hi
+      LEFT JOIN product_prices pp ON pp.barcode = hi.barcode AND pp.user_id = $2
       WHERE hi.household_id = $1
       ORDER BY hi.expiry_date ASC NULLS LAST, hi.created_at DESC
-    `, [householdId]);
+    `, [householdId, req.user.id]);
 
     // Get stats
     const statsResult = await query(`
@@ -649,6 +650,7 @@ router.get('/:id/inventory', authenticateToken, async (req, res) => {
         location: item.location,
         notes: item.notes,
         barcode: item.barcode,
+        price: item.saved_price,
         brand: item.brand,
         category: item.category,
         image_url: item.image_url,
@@ -749,9 +751,9 @@ router.post('/:id/inventory', [
     }
 
     const householdId = req.params.id;
-    const { custom_name, quantity, unit, location, expiry_date, barcode, notes, price } = req.body;
+    const { custom_name, quantity, unit, location, expiry_date, barcode, notes, price, purchase_date } = req.body;
     
-    console.log('📦 Adding inventory item:', { custom_name, quantity, expiry_date, location, barcode });
+    console.log('📦 Adding inventory item:', { custom_name, quantity, expiry_date, location, barcode, price, purchase_date });
     
     // Check if user is member of household
     const memberCheck = await query(`
@@ -773,12 +775,15 @@ router.post('/:id/inventory', [
     const result = await query(`
       INSERT INTO household_inventory (
         household_id, custom_name, quantity, unit, location, 
-        expiry_date, notes, added_by_user_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        expiry_date, notes, barcode, price, purchase_date, added_by_user_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *
     `, [
       householdId, custom_name, quantity, unit || 'db', location || 'Egyéb',
-      expiry_date || null, notes || null, req.user.id
+      expiry_date || null, notes || null, barcode || null, 
+      price ? parseFloat(price) : null, 
+      purchase_date || new Date().toISOString().split('T')[0], 
+      req.user.id
     ]);
     
     // Re-enable audit trigger

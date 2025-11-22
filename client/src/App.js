@@ -17,6 +17,8 @@ import ThemeToggle from './components/ThemeToggle';
 import Utilities from './components/Utilities';
 import MinimalTest from './components/MinimalTest';
 import PWAPrompt from './components/PWAPrompt';
+import Statistics from './components/Statistics';
+import Settings from './components/Settings';
 // import { Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { useDarkThemeForce } from './hooks/useDarkThemeForce';
@@ -24,6 +26,7 @@ import authService from './services/authService';
 import householdsService from './services/householdsService';
 import * as serviceWorker from './utils/serviceWorker';
 import inventoryService from './services/inventoryService';
+import shoppingListService from './services/shoppingListService';
 
 function AppContent() {
   // Use the dark theme force hook
@@ -173,13 +176,27 @@ function AppContent() {
     setCurrentHousehold(household);
     householdsService.setCurrentHousehold(household);
     await loadInventory();
+    await loadShoppingListCount(); // Bevásárlólista számláló frissítése
     setShowHouseholdManager(false);
   };
 
-  const handleUpdateProfile = (updatedData) => {
-    const updatedUser = { ...user, ...updatedData };
-    setUser(updatedUser);
-    localStorage.setItem('user', JSON.stringify(updatedUser));
+  const handleUpdateProfile = async (updatedData) => {
+    try {
+      console.log('Updating profile with:', updatedData);
+      
+      // Backend API hívás az authService-en keresztül
+      const updatedUser = await authService.updateProfile(updatedData);
+      
+      console.log('Profile updated successfully:', updatedUser);
+      
+      // State frissítése
+      setUser(updatedUser);
+      
+      return Promise.resolve(updatedUser);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      return Promise.reject(error);
+    }
   };
 
   // Alkalmazás inicializálása
@@ -285,6 +302,7 @@ function AppContent() {
         setCurrentHousehold(selectedHousehold);
         householdsService.setCurrentHousehold(selectedHousehold);
         await loadInventory(); // Készlet betöltése
+        await loadShoppingListCount(); // Bevásárlólista számláló betöltése
       } else {
         console.error('Nincs elérhető háztartás - ez nem kellene hogy megtörténjen!');
         householdsService.clearAllCache();
@@ -314,6 +332,32 @@ function AppContent() {
       setProducts([]);
     } finally {
       setInventoryLoading(false);
+    }
+  };
+
+  // Bevásárlólista számláló betöltése
+  const loadShoppingListCount = async () => {
+    try {
+      console.log('🛒 Bevásárlólista számláló betöltése...');
+      const defaultListItems = await shoppingListService.getDefaultListItems();
+      const formattedItems = defaultListItems.map(item => 
+        shoppingListService.formatItemForDisplay(item)
+      );
+      setShoppingItems(formattedItems);
+      console.log('✅ Bevásárlólista betöltve:', formattedItems.filter(item => !item.purchased).length, 'aktív tétel');
+    } catch (error) {
+      console.warn('⚠️ Bevásárlólista betöltési hiba, lokális tárolás használata:', error.message);
+      // Fallback: lokális tárolás használata
+      try {
+        const localItems = shoppingListService.getLocalShoppingItems();
+        const formattedItems = localItems.map(item => 
+          shoppingListService.formatItemForDisplay(item)
+        );
+        setShoppingItems(formattedItems);
+      } catch (localError) {
+        console.error('❌ Lokális bevásárlólista betöltési hiba:', localError);
+        setShoppingItems([]);
+      }
     }
   };
 
@@ -388,14 +432,17 @@ function AppContent() {
               <span className="nav-icon">🔌</span>
               <span className="nav-text">Közművek</span>
             </button>
+            <button 
+              className={`nav-button ${currentView === 'statistics' ? 'active' : ''}`}
+              onClick={() => setCurrentView('statistics')}
+            >
+              <span className="nav-icon">📊</span>
+              <span className="nav-text">Statisztikák</span>
+            </button>
           </nav>
         </div>
         
         <div className="header-right">
-          <button className="add-product-button" onClick={handleOpenModal}>
-            + Új Termék
-          </button>
-          
           <ThemeToggle onSettingsClick={() => setCurrentView('settings')} />
           
           <div className="user-menu">
@@ -433,6 +480,7 @@ function AppContent() {
               products={products} 
               onUpdate={handleUpdateProduct}
               onDelete={handleDeleteProduct}
+              onAddNew={handleOpenModal}
             />
           )
         ) : currentView === 'shopping' ? (
@@ -448,52 +496,18 @@ function AppContent() {
           <Utilities 
             currentHousehold={currentHousehold}
           />
+        ) : currentView === 'statistics' ? (
+          <Statistics 
+            currentHousehold={currentHousehold}
+          />
         ) : currentView === 'settings' ? (
-          <div className="settings-container">
-            <div className="settings-header">
-              <h2>⚙️ Általános Beállítások</h2>
-              <p>Háztartás: {currentHousehold?.name}</p>
-            </div>
-            <div className="settings-content">
-              <div className="settings-section">
-                <h3>🏠 Háztartás beállítások</h3>
-                <p>Háztartás kezelése, tagok meghívása</p>
-                <button 
-                  className="settings-action-btn"
-                  onClick={() => setShowHouseholdManager(true)}
-                >
-                  Háztartások kezelése
-                </button>
-              </div>
-              <div className="settings-section">
-                <h3>👤 Felhasználói beállítások</h3>
-                <p>Profil szerkesztése, jelszó módosítása</p>
-                <button 
-                  className="settings-action-btn"
-                  onClick={() => setShowUserProfile(true)}
-                >
-                  Profil szerkesztése
-                </button>
-              </div>
-              <div className="settings-section">
-                <h3>🎨 Téma beállítások</h3>
-                <p>Alkalmazás megjelenésének testreszabása</p>
-                <div className="theme-settings">
-                  <ThemeToggle />
-                </div>
-              </div>
-              <div className="settings-section">
-                <h3>🔌 Közműbeállítások</h3>
-                <p>A közműbeállítások a Közművek menüpontban érhetők el</p>
-                <button 
-                  className="settings-action-btn"
-                  onClick={() => setCurrentView('utilities')}
-                >
-                  Közművek megnyitása
-                </button>
-              </div>
-            </div>
-          </div>
+          <Settings 
+            user={user}
+            currentHousehold={currentHousehold}
+            onUpdateProfile={handleUpdateProfile}
+            onShowHouseholdManager={() => setShowHouseholdManager(true)}
+            onNavigateToUtilities={() => setCurrentView('utilities')}
+          />
         ) : (
           <ProductList 
             products={products} 

@@ -1,12 +1,49 @@
 import React, { useEffect, useRef } from 'react';
 import './ProductListItem.css';
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInDays, parseISO, format } from 'date-fns';
+import { hu } from 'date-fns/locale';
 import { useTheme } from '../contexts/ThemeContext';
 
 function ProductListItem({ product, onUpdate, onDelete }) {
   const { theme } = useTheme();
   const itemRef = useRef(null);
   
+  const getExpiryStatus = () => {
+    if (!product.expiryDate) return null;
+    
+    const today = new Date();
+    const expiryDate = parseISO(product.expiryDate);
+    const daysUntilExpiry = differenceInDays(expiryDate, today);
+    
+    // Ha 7 napon belül van, napokban jelenítjük meg
+    // Ha 7 napon túl van, dátum formátumban
+    let displayText;
+    if (daysUntilExpiry <= 7) {
+      if (daysUntilExpiry < 0) {
+        displayText = 'Lejárt';
+      } else if (daysUntilExpiry === 0) {
+        displayText = 'Ma jár le';
+      } else {
+        displayText = `${daysUntilExpiry} nap`;
+      }
+    } else {
+      // 7 napon túl: dátum formátumban
+      displayText = format(expiryDate, 'yyyy.MM.dd', { locale: hu });
+    }
+    
+    if (daysUntilExpiry < 0) {
+      return { status: 'expired', text: displayText, class: 'expired' };
+    } else if (daysUntilExpiry === 0) {
+      return { status: 'today', text: displayText, class: 'expires-today' };
+    } else if (daysUntilExpiry <= 3) {
+      return { status: 'soon', text: displayText, class: 'expires-soon' };
+    } else {
+      return { status: 'ok', text: displayText, class: 'expires-ok' };
+    }
+  };
+
+  const expiryStatus = getExpiryStatus();
+
   // Force dark theme background colors
   useEffect(() => {
     if (itemRef.current) {
@@ -18,8 +55,8 @@ function ProductListItem({ product, onUpdate, onDelete }) {
       
       if (theme === 'dark') {
         // Force dark background
-        const expiryStatus = getExpiryStatus();
-        if (expiryStatus?.class === 'expired' || expiryStatus?.class === 'expires-today' || expiryStatus?.class === 'expires-soon') {
+        const status = getExpiryStatus();
+        if (status?.class === 'expired' || status?.class === 'expires-today' || status?.class === 'expires-soon') {
           element.style.setProperty('background-color', '#334155', 'important');
           element.style.setProperty('background', '#334155', 'important');
         } else {
@@ -45,26 +82,6 @@ function ProductListItem({ product, onUpdate, onDelete }) {
       }
     }
   }, [theme, product.expiryDate]);
-  
-  const getExpiryStatus = () => {
-    if (!product.expiryDate) return null;
-    
-    const today = new Date();
-    const expiryDate = parseISO(product.expiryDate);
-    const daysUntilExpiry = differenceInDays(expiryDate, today);
-    
-    if (daysUntilExpiry < 0) {
-      return { status: 'expired', text: 'Lejárt', class: 'expired' };
-    } else if (daysUntilExpiry === 0) {
-      return { status: 'today', text: 'Ma jár le', class: 'expires-today' };
-    } else if (daysUntilExpiry <= 3) {
-      return { status: 'soon', text: `${daysUntilExpiry} nap`, class: 'expires-soon' };
-    } else {
-      return { status: 'ok', text: `${daysUntilExpiry} nap`, class: 'expires-ok' };
-    }
-  };
-
-  const expiryStatus = getExpiryStatus();
 
   return (
     <div 
@@ -74,10 +91,26 @@ function ProductListItem({ product, onUpdate, onDelete }) {
       <div className="product-info">
         <span className="product-name">{product.name}</span>
         <div className="product-details">
-          {product.location && <span className="product-location">{product.location}</span>}
+          {product.location && (
+            <span className="product-location">
+              {product.location}
+            </span>
+          )}
           {product.expiryDate && (
             <span className={`expiry-date ${expiryStatus?.class || ''}`}>
-              {expiryStatus?.text}
+              📅 {expiryStatus?.text}
+            </span>
+          )}
+          {product.price && (
+            <span 
+              className="product-price"
+              style={theme === 'dark' ? {
+                color: '#ffffff',
+                backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                borderColor: 'rgba(59, 130, 246, 0.8)'
+              } : {}}
+            >
+              💰 {parseFloat(product.price).toLocaleString('hu-HU')} Ft
             </span>
           )}
         </div>

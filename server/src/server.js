@@ -30,10 +30,17 @@ const utilitySettingsRoutes = require('./routes/utility-settings');
 const utilityPricingRoutes = require('./routes/utility-pricing');
 const utilityCalculatorRoutes = require('./routes/utility-calculator');
 const householdCostsRoutes = require('./routes/household-costs');
+const otherExpensesRoutes = require('./routes/other-expenses');
 const recipesRoutes = require('./routes/recipes');
 const uploadRoutes = require('./routes/upload');
 const publicRecipesRoutes = require('./routes/public-recipes');
 const recipeImportRoutes = require('./routes/recipe-import');
+const statisticsRoutes = require('./routes/statistics');
+const consumptionRoutes = require('./routes/consumption');
+const householdSettingsRoutes = require('./routes/household-settings');
+const userSettingsRoutes = require('./routes/user-settings');
+const pushNotificationRoutes = require('./routes/push-notifications');
+const notificationSchedulerRoutes = require('./routes/notification-scheduler');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -184,10 +191,17 @@ apiRouter.use('/utility-settings', utilitySettingsRoutes);
 apiRouter.use('/utility-pricing', utilityPricingRoutes);
 apiRouter.use('/utility-calculator', utilityCalculatorRoutes);
 apiRouter.use('/household-costs', householdCostsRoutes);
+apiRouter.use('/other-expenses', otherExpensesRoutes);
 apiRouter.use('/recipes', recipesRoutes);
 apiRouter.use('/upload', uploadRoutes);
 apiRouter.use('/shared-recipes', publicRecipesRoutes);
 apiRouter.use('/recipe-import', recipeImportRoutes);
+apiRouter.use('/statistics', statisticsRoutes);
+apiRouter.use('/households/:householdId/consumption', consumptionRoutes);
+apiRouter.use('/households', householdSettingsRoutes);
+apiRouter.use('/users', userSettingsRoutes);
+apiRouter.use('/push', pushNotificationRoutes);
+apiRouter.use('/scheduler', notificationSchedulerRoutes);
 
 app.use(`/api/${process.env.API_VERSION || 'v1'}`, apiRouter);
 

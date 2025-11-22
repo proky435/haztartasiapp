@@ -19,12 +19,60 @@
   border-radius: var(--border-radius);
   margin-bottom: var(--spacing-lg);
   border: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing);
 }
 
 .filter-controls {
   display: flex;
   gap: var(--spacing-lg);
   flex-wrap: wrap;
+  flex: 1;
+}
+
+.add-product-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.add-product-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.add-product-btn:active {
+  transform: translateY(0);
+}
+
+.add-product-btn .btn-icon {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+@media (max-width: 768px) {
+  .list-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .add-product-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .filter-controls label {

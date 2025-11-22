@@ -8,7 +8,7 @@ import ErrorBoundary from './ErrorBoundary';
 import ProductRenameModal from './ProductRenameModal';
 import productsService from '../services/productsService';
 import expiryPatternService from '../services/expiryPatternService';
-import { isSecureContext, isCameraSupported } from '../utils/cameraUtils';
+import { isSecureContext } from '../utils/cameraUtils';
 import './NewProductModal.css';
 
 function NewProductModal({ onClose, onAdd, householdId }) {
@@ -29,6 +29,7 @@ function NewProductModal({ onClose, onAdd, householdId }) {
   const [useSimpleScanner, setUseSimpleScanner] = useState(true); // Alapértelmezetten egyszerű scanner
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
+  const [isEditingPrice, setIsEditingPrice] = useState(false);
 
   // Backend API hívás vonalkód alapján
   const fetchProductByBarcode = async (barcodeValue) => {
@@ -42,6 +43,11 @@ function NewProductModal({ onClose, onAdd, householdId }) {
         setName(productName);
         setBarcode(barcodeValue);
         setCurrentProduct(product); // Termék mentése átnevezéshez
+        
+        // Ha van mentett ár, használjuk azt
+        if (product.savedPrice) {
+          setPrice(product.savedPrice);
+        }
         
         // Lekérjük a lejárati javaslatot
         await fetchExpirySuggestion(barcodeValue, productName);
@@ -174,10 +180,21 @@ function NewProductModal({ onClose, onAdd, householdId }) {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     console.log('handleSubmit called', { name, quantity });
     if (name && quantity > 0) {
+      // Ha van ár és vonalkód, mentjük az árat
+      if (price && barcode) {
+        try {
+          await productsService.saveProductPrice(barcode, name, parseFloat(price));
+          console.log('Price saved successfully');
+        } catch (error) {
+          console.error('Error saving price:', error);
+          // Folytatjuk a termék hozzáadását, még ha az ár mentése sikertelen is
+        }
+      }
+
       const productData = { 
         custom_name: name,  // Backend vár custom_name-et
         quantity: parseInt(quantity, 10),
@@ -185,6 +202,7 @@ function NewProductModal({ onClose, onAdd, householdId }) {
         location,
         barcode: barcode || null,
         price: price ? parseFloat(price) : null,
+        purchase_date: new Date().toISOString().split('T')[0], // Mai dátum
         notes: notes || null
       };
       console.log('Calling onAdd with:', productData);
@@ -218,6 +236,7 @@ function NewProductModal({ onClose, onAdd, householdId }) {
         
         <div className="modal-body">
           <form onSubmit={handleSubmit}>
+            {/* 1. Termék Neve */}
             <div className="form-group">
               <label>
                 <span className="label-icon">🏷️</span>
@@ -250,7 +269,133 @@ function NewProductModal({ onClose, onAdd, householdId }) {
                 </small>
               )}
             </div>
-          
+
+            {/* 2. Gyors Bevitel */}
+            <div className="scan-options">
+              <div className="scan-options-title">⚡ Gyors Bevitel</div>
+              <div className="button-group">
+                <button 
+                  type="button" 
+                  className="scan-button barcode-scan-btn"
+                  onClick={() => handleCameraAction(
+                    () => {
+                      setUseSimpleScanner('auto');
+                      setShowBarcodeScanner(true);
+                    },
+                    'Vonalkód Beolvasás'
+                  )}
+                  disabled={isLoadingProduct}
+                >
+                  <span className="scan-icon">📷</span>
+                  Vonalkód Beolvasás
+                </button>
+                <button 
+                  type="button" 
+                  className="scan-button date-scan-btn"
+                  onClick={() => handleCameraAction(
+                    () => setShowDateScanner(true),
+                    'Dátum OCR'
+                  )}
+                >
+                  <span className="scan-icon">📅</span>
+                  Dátum OCR
+                </button>
+              </div>
+            </div>
+
+            {barcode && (
+              <div className="barcode-info">
+                <strong>Vonalkód:</strong> {barcode}
+              </div>
+            )}
+
+            {/* 3. Lejárati Dátum */}
+            <div className="form-group">
+              <label>
+                <span className="label-icon">📅</span>
+                Lejárati Dátum
+              </label>
+              <input 
+                type="date" 
+                name="expiryDate" 
+                value={expiryDate} 
+                onChange={(e) => setExpiryDate(e.target.value)} 
+              />
+              
+              {showSuggestion && expirySuggestion && (
+                <div className="expiry-suggestion">
+                  <div className="suggestion-header">
+                    <span className="suggestion-icon">💡</span>
+                    <span className="suggestion-title">Javaslat a korábbi vásárlásaid alapján</span>
+                  </div>
+                  <div className="suggestion-message">
+                    {expirySuggestion.message}
+                  </div>
+                  <div className="suggestion-actions">
+                    <button 
+                      type="button" 
+                      className="suggestion-apply-btn"
+                      onClick={applySuggestion}
+                    >
+                      ✅ Alkalmazás ({new Date(expirySuggestion.suggestedExpiryDate).toLocaleDateString('hu-HU')})
+                    </button>
+                    <button 
+                      type="button" 
+                      className="suggestion-dismiss-btn"
+                      onClick={() => setShowSuggestion(false)}
+                    >
+                      ❌ Elvetés
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 4. Ár */}
+            <div className="form-group">
+              <label>
+                <span className="label-icon">💰</span>
+                Ár (opcionális)
+                {currentProduct && currentProduct.savedPrice && !isEditingPrice && (
+                  <span className="saved-price-indicator">
+                    💾 Mentett ár
+                  </span>
+                )}
+              </label>
+              <div className="price-input-wrapper">
+                <input 
+                  type="number" 
+                  name="price" 
+                  value={price} 
+                  onChange={(e) => {
+                    setPrice(e.target.value);
+                    setIsEditingPrice(true);
+                  }} 
+                  min="0"
+                  step="0.01"
+                  placeholder="pl. 450"
+                  disabled={!isEditingPrice && currentProduct && currentProduct.savedPrice}
+                />
+                <span className="price-currency">Ft</span>
+                {currentProduct && currentProduct.savedPrice && !isEditingPrice && (
+                  <button 
+                    type="button" 
+                    onClick={() => setIsEditingPrice(true)}
+                    className="edit-price-button"
+                    title="Ár szerkesztése"
+                  >
+                    ✏️
+                  </button>
+                )}
+              </div>
+              {isEditingPrice && currentProduct && currentProduct.savedPrice && (
+                <small className="price-edit-info">
+                  ℹ️ Az új ár mentésre kerül a termék hozzáadásakor
+                </small>
+              )}
+            </div>
+
+            {/* 5. Mennyiség */}
             <div className="form-group">
               <label>
                 <span className="label-icon">🔢</span>
@@ -293,48 +438,7 @@ function NewProductModal({ onClose, onAdd, householdId }) {
               </div>
             </div>
 
-            <div className="form-group">
-              <label>
-                <span className="label-icon">📅</span>
-                Lejárati Dátum
-              </label>
-              <input 
-                type="date" 
-                name="expiryDate" 
-                value={expiryDate} 
-                onChange={(e) => setExpiryDate(e.target.value)} 
-              />
-              
-              {/* Lejárati javaslat megjelenítése */}
-              {showSuggestion && expirySuggestion && (
-                <div className="expiry-suggestion">
-                  <div className="suggestion-header">
-                    <span className="suggestion-icon">💡</span>
-                    <span className="suggestion-title">Javaslat a korábbi vásárlásaid alapján</span>
-                  </div>
-                  <div className="suggestion-message">
-                    {expirySuggestion.message}
-                  </div>
-                  <div className="suggestion-actions">
-                    <button 
-                      type="button" 
-                      className="suggestion-apply-btn"
-                      onClick={applySuggestion}
-                    >
-                      ✅ Alkalmazás ({new Date(expirySuggestion.suggestedExpiryDate).toLocaleDateString('hu-HU')})
-                    </button>
-                    <button 
-                      type="button" 
-                      className="suggestion-dismiss-btn"
-                      onClick={() => setShowSuggestion(false)}
-                    >
-                      ❌ Elvetés
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
+            {/* 6. Tárolási Hely */}
             <div className="form-group">
               <label>
                 <span className="label-icon">📍</span>
@@ -354,25 +458,7 @@ function NewProductModal({ onClose, onAdd, householdId }) {
               </div>
             </div>
 
-            <div className="form-group">
-              <label>
-                <span className="label-icon">💰</span>
-                Ár (opcionális)
-              </label>
-              <div className="price-input-wrapper">
-                <input 
-                  type="number" 
-                  name="price" 
-                  value={price} 
-                  onChange={(e) => setPrice(e.target.value)} 
-                  min="0"
-                  step="0.01"
-                  placeholder="pl. 450"
-                />
-                <span className="price-currency">Ft</span>
-              </div>
-            </div>
-
+            {/* 7. Megjegyzés */}
             <div className="form-group">
               <label>
                 <span className="label-icon">📝</span>
@@ -386,47 +472,6 @@ function NewProductModal({ onClose, onAdd, householdId }) {
                 rows="3"
                 className="notes-textarea"
               />
-            </div>
-
-            {barcode && (
-              <div className="barcode-info">
-                <strong>Vonalkód:</strong> {barcode}
-              </div>
-            )}
-
-            <div className="scan-options">
-              <div className="scan-options-title">⚡ Gyors Bevitel</div>
-              <div className="button-group">
-                <button 
-                  type="button" 
-                  onClick={() => {
-                    setUseSimpleScanner(true);
-                    setShowBarcodeScanner(true);
-                  }}
-                  disabled={isLoadingProduct}
-                >
-                  {isLoadingProduct ? '⏳ Betöltés...' : '📝 Vonalkód Bevitel'}
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => {
-                    setUseSimpleScanner('auto');
-                    setShowBarcodeScanner(true);
-                  }}
-                  disabled={isLoadingProduct}
-                >
-                  📷 Kamera Szkennelés
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => handleCameraAction(
-                    () => setShowDateScanner(true),
-                    'Dátum Felismerése (OCR)'
-                  )}
-                >
-                  📅 Dátum OCR
-                </button>
-              </div>
             </div>
           
             <div className="form-actions">

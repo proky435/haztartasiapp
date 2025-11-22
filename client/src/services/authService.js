@@ -127,9 +127,15 @@ class AuthService {
   // Profil frissítése
   async updateProfile(profileData) {
     try {
-      await apiService.put('/users/profile', profileData);
+      const response = await apiService.put('/users/profile', profileData);
       
-      // Frissítjük a felhasználó adatokat
+      // Ha a válasz tartalmazza a user objektumot, használjuk azt
+      if (response.user) {
+        localStorage.setItem('user', JSON.stringify(response.user));
+        return response.user;
+      }
+      
+      // Egyébként lekérjük a frissített felhasználó adatokat
       const updatedUser = await this.getCurrentUser();
       
       return updatedUser;

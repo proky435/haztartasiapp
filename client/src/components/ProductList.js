@@ -5,7 +5,7 @@ import './ProductList.css';
 import { differenceInDays, parseISO } from 'date-fns';
 import inventoryService from '../services/inventoryService';
 
-function ProductList({ products, onUpdate, onDelete }) {
+function ProductList({ products, onUpdate, onDelete, onAddNew }) {
   const [locationFilter, setLocationFilter] = useState('Összes');
   const [sortBy, setSortBy] = useState('expiry');
   const [deleteConfirmation, setDeleteConfirmation] = useState({ isOpen: false, product: null });
@@ -78,6 +78,13 @@ function ProductList({ products, onUpdate, onDelete }) {
             </select>
           </label>
         </div>
+        
+        {onAddNew && (
+          <button className="add-product-btn" onClick={onAddNew}>
+            <span className="btn-icon">+</span>
+            <span className="btn-text">Új Termék</span>
+          </button>
+        )}
       </div>
 
       <div className="products-grid">
