@@ -1,0 +1,14 @@
+{"level":"info","message":"Redis Client Connected","timestamp":"2025-11-25 16:22:38"}
+{"level":"info","message":"✅ PostgreSQL kapcsolat sikeresen létrehozva","timestamp":"2025-11-25 16:22:38"}
+{"level":"info","message":"📅 Aktuális idő: Tue Nov 25 2025 16:22:38 GMT+0100 (közép-európai téli idő)","timestamp":"2025-11-25 16:22:38"}
+{"level":"info","message":"🐘 PostgreSQL verzió: PostgreSQL 15.14","timestamp":"2025-11-25 16:22:38"}
+{"level":"info","message":"🚀 Háztartási App Backend elindult! (HTTPS)","timestamp":"2025-11-25 16:22:38"}
+{"level":"info","message":"📍 Port: 3001","timestamp":"2025-11-25 16:22:38"}
+{"level":"info","message":"🌍 Environment: development","timestamp":"2025-11-25 16:22:38"}
+{"level":"info","message":"📚 API Docs: https://192.168.0.19:3001/api/docs","timestamp":"2025-11-25 16:22:38"}
+{"level":"info","message":"❤️  Health Check: https://192.168.0.19:3001/health","timestamp":"2025-11-25 16:22:38"}
+{"level":"info","message":"Starting cron jobs...","timestamp":"2025-11-25 16:22:38"}
+{"level":"info","message":"Low stock notifications scheduled: 0 9 * * *","timestamp":"2025-11-25 16:22:38"}
+{"level":"info","message":"Expiry warnings scheduled: 0 8 * * *","timestamp":"2025-11-25 16:22:38"}
+{"level":"info","message":"Shopping reminders scheduled: 0 8 * * 1","timestamp":"2025-11-25 16:22:38"}
+{"level":"info","message":"✅ All cron jobs started successfully","timestamp":"2025-11-25 16:22:38"}

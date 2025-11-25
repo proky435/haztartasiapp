@@ -632,6 +632,26 @@ function Settings({ user, currentHousehold, onUpdateProfile, onShowHouseholdMana
           )}
         </div>
 
+        {/* PWA Debug Info */}
+        <div className="settings-section">
+          <h3>📱 PWA Információk</h3>
+          <div className="pwa-debug-info">
+            <p><strong>Service Worker:</strong> {navigator.serviceWorker ? '✓ Támogatott' : '✗ Nem támogatott'}</p>
+            <p><strong>Standalone mód:</strong> {window.matchMedia('(display-mode: standalone)').matches ? '✓ Telepítve' : '✗ Böngészőben'}</p>
+            <p><strong>Online állapot:</strong> {navigator.onLine ? '✓ Online' : '✗ Offline'}</p>
+            <p><strong>HTTPS:</strong> {window.location.protocol === 'https:' ? '✓ Biztonságos' : '⚠ HTTP'}</p>
+            <button 
+              className="settings-action-btn"
+              onClick={() => {
+                localStorage.removeItem('pwa-install-dismissed');
+                alert('Install prompt reset! Frissítsd az oldalt.');
+              }}
+            >
+              Install Prompt Reset
+            </button>
+          </div>
+        </div>
+
         {/* Közműbeállítások */}
         <div className="settings-section">
           <h3>🔌 Közműbeállítások</h3>

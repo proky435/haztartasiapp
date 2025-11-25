@@ -19,6 +19,8 @@ import MinimalTest from './components/MinimalTest';
 import PWAPrompt from './components/PWAPrompt';
 import Statistics from './components/Statistics';
 import Settings from './components/Settings';
+import InstallPrompt from './components/InstallPrompt';
+import OfflineIndicator from './components/OfflineIndicator';
 // import { Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { useDarkThemeForce } from './hooks/useDarkThemeForce';
@@ -44,6 +46,11 @@ function AppContent() {
   const [shoppingItems, setShoppingItems] = useState([]);
   const [products, setProducts] = useState([]);
   const [inventoryLoading, setInventoryLoading] = useState(false);
+
+  // Ellenőrizzük, hogy shared recipe URL-e
+  const currentPath = window.location.pathname;
+  const isSharedRecipePage = currentPath.startsWith('/shared-recipe/');
+  const shareId = isSharedRecipePage ? currentPath.split('/shared-recipe/')[1] : null;
 
   const handleOpenModal = () => {
     setIsModalOpen(true);
@@ -375,6 +382,11 @@ function AppContent() {
     };
   }, [showUserProfile]);
 
+  // Shared Recipe Page - NINCS SZÜKSÉG BEJELENTKEZÉSRE!
+  if (isSharedRecipePage && shareId) {
+    return <SharedRecipePage shareId={shareId} />;
+  }
+
   // Ha nincs bejelentkezve, mutassuk a login oldalt
   // Loading állapot
   if (isLoading) {
@@ -395,6 +407,8 @@ function AppContent() {
 
   return (
     <div className="App">
+      <OfflineIndicator />
+      <InstallPrompt />
       <NotificationBanner products={products} />
       <header className="App-header">
         <div className="header-left">

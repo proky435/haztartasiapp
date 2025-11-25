@@ -243,3 +243,10 @@ AI javaslatok - innovatív funkció
 Gamification - user engagement
 Közösségi funkciók - platform növekedés
 Online bolt integráció - monetizáció
+
+
+
+
+
+
+a recept megosztas mukodik de valami a crt-vel nem jo 

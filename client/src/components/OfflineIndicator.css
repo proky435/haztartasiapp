@@ -1,0 +1,46 @@
+.offline-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10000;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.offline-indicator.offline .offline-indicator-content {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.offline-indicator.online .offline-indicator-content {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.offline-indicator-content {
+  padding: 12px 20px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.offline-icon {
+  font-size: 1.2rem;
+}
+
+/* Online indicator animáció */
+.offline-indicator.online {
+  animation: slideDown 0.3s ease-out;
+}
