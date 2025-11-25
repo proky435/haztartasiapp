@@ -11,7 +11,8 @@ const logger = require('../utils/logger');
 let cronJobs = {
   lowStock: null,
   expiry: null,
-  shopping: null
+  shopping: null,
+  autoDelete: null
 };
 
 let isEnabled = false;
@@ -26,7 +27,9 @@ async function getCronSettings() {
         cron_enabled,
         low_stock_cron,
         expiry_warning_cron,
-        shopping_reminder_cron
+        shopping_reminder_cron,
+        auto_delete_expired_cron,
+        auto_delete_days_after_expiry
       FROM system_settings
       WHERE id = 1
     `);
@@ -40,7 +43,9 @@ async function getCronSettings() {
       cron_enabled: true,
       low_stock_cron: '0 9 * * *',      // Naponta 9:00
       expiry_warning_cron: '0 8 * * *', // Naponta 8:00
-      shopping_reminder_cron: '0 8 * * 1' // Hétfő 8:00
+      shopping_reminder_cron: '0 8 * * 1', // Hétfő 8:00
+      auto_delete_expired_cron: '0 2 * * *', // Naponta 2:00
+      auto_delete_days_after_expiry: 7  // 7 nap után törlés
     };
   } catch (error) {
     logger.error('Error getting cron settings:', error);
@@ -104,6 +109,21 @@ async function startCronJobs() {
     });
     logger.info(`Shopping reminders scheduled: ${settings.shopping_reminder_cron}`);
     
+    // Automatikus törlés - lejárt termékek
+    if (cronJobs.autoDelete) {
+      cronJobs.autoDelete.stop();
+    }
+    const daysAfterExpiry = settings.auto_delete_days_after_expiry || 7;
+    cronJobs.autoDelete = cron.schedule(settings.auto_delete_expired_cron, async () => {
+      logger.info(`Running scheduled auto-delete for products expired more than ${daysAfterExpiry} days ago...`);
+      try {
+        await notificationScheduler.deleteExpiredProducts(daysAfterExpiry);
+      } catch (error) {
+        logger.error('Error in scheduled auto-delete:', error);
+      }
+    });
+    logger.info(`Auto-delete expired products scheduled: ${settings.auto_delete_expired_cron} (${daysAfterExpiry} days after expiry)`);
+    
     isEnabled = true;
     logger.info('✅ All cron jobs started successfully');
     
@@ -134,6 +154,11 @@ function stopCronJobs() {
     cronJobs.shopping = null;
   }
   
+  if (cronJobs.autoDelete) {
+    cronJobs.autoDelete.stop();
+    cronJobs.autoDelete = null;
+  }
+  
   isEnabled = false;
   logger.info('✅ All cron jobs stopped');
 }
@@ -156,7 +181,8 @@ function getCronStatus() {
     jobs: {
       lowStock: cronJobs.lowStock !== null,
       expiry: cronJobs.expiry !== null,
-      shopping: cronJobs.shopping !== null
+      shopping: cronJobs.shopping !== null,
+      autoDelete: cronJobs.autoDelete !== null
     }
   };
 }
@@ -170,7 +196,9 @@ async function updateCronSettings(settings) {
       cron_enabled,
       low_stock_cron,
       expiry_warning_cron,
-      shopping_reminder_cron
+      shopping_reminder_cron,
+      auto_delete_expired_cron,
+      auto_delete_days_after_expiry
     } = settings;
     
     // Validáljuk a cron kifejezéseket
@@ -183,18 +211,27 @@ async function updateCronSettings(settings) {
     if (shopping_reminder_cron && !cron.validate(shopping_reminder_cron)) {
       throw new Error('Invalid shopping_reminder_cron expression');
     }
+    if (auto_delete_expired_cron && !cron.validate(auto_delete_expired_cron)) {
+      throw new Error('Invalid auto_delete_expired_cron expression');
+    }
     
     // Frissítjük az adatbázisban
     await query(`
-      INSERT INTO system_settings (id, cron_enabled, low_stock_cron, expiry_warning_cron, shopping_reminder_cron)
-      VALUES (1, $1, $2, $3, $4)
+      INSERT INTO system_settings (
+        id, cron_enabled, low_stock_cron, expiry_warning_cron, 
+        shopping_reminder_cron, auto_delete_expired_cron, auto_delete_days_after_expiry
+      )
+      VALUES (1, $1, $2, $3, $4, $5, $6)
       ON CONFLICT (id) DO UPDATE SET
         cron_enabled = $1,
         low_stock_cron = $2,
         expiry_warning_cron = $3,
         shopping_reminder_cron = $4,
+        auto_delete_expired_cron = $5,
+        auto_delete_days_after_expiry = $6,
         updated_at = NOW()
-    `, [cron_enabled, low_stock_cron, expiry_warning_cron, shopping_reminder_cron]);
+    `, [cron_enabled, low_stock_cron, expiry_warning_cron, shopping_reminder_cron, 
+        auto_delete_expired_cron, auto_delete_days_after_expiry]);
     
     // Újraindítjuk a cron job-okat
     await restartCronJobs();

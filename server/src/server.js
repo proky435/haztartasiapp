@@ -308,11 +308,16 @@ async function startServer() {
             logger.info(`📚 API Docs: https://192.168.0.19:${PORT}/api/docs`);
             logger.info(`❤️  Health Check: https://192.168.0.19:${PORT}/health`);
             
-            // Cron scheduler indítása
-            try {
-              await cronScheduler.startCronJobs();
-            } catch (error) {
-              logger.error('Failed to start cron jobs:', error);
+            // Cron scheduler indítása (csak ha engedélyezve van)
+            if (process.env.ENABLE_CRON_SCHEDULER === 'true') {
+              try {
+                await cronScheduler.startCronJobs();
+                logger.info('✅ Cron scheduler elindítva');
+              } catch (error) {
+                logger.error('Failed to start cron jobs:', error);
+              }
+            } else {
+              logger.info('⏸️  Cron scheduler letiltva (ENABLE_CRON_SCHEDULER=false)');
             }
           });
         } else {
@@ -346,7 +351,9 @@ async function startServer() {
     // Graceful shutdown
     process.on('SIGTERM', async () => {
       logger.info('SIGTERM received, shutting down gracefully');
-      cronScheduler.stopCronJobs();
+      if (process.env.ENABLE_CRON_SCHEDULER === 'true') {
+        cronScheduler.stopCronJobs();
+      }
       server.close(() => {
         logger.info('Process terminated');
         process.exit(0);
@@ -355,7 +362,9 @@ async function startServer() {
 
     process.on('SIGINT', async () => {
       logger.info('SIGINT received, shutting down gracefully');
-      cronScheduler.stopCronJobs();
+      if (process.env.ENABLE_CRON_SCHEDULER === 'true') {
+        cronScheduler.stopCronJobs();
+      }
       if (redisClient) {
         await redisClient.quit();
       }

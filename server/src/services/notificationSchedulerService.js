@@ -325,6 +325,131 @@ async function sendShoppingReminders() {
 }
 
 /**
+ * Automatikus törlés - Régen lejárt termékek
+ * Törli azokat a termékeket, amik már X napja lejártak
+ */
+async function deleteExpiredProducts(daysAfterExpiry = 7) {
+  try {
+    logger.info(`Starting auto-delete for products expired more than ${daysAfterExpiry} days ago...`);
+    
+    // Lekérjük a törlendő termékeket
+    const expiredItemsResult = await query(`
+      SELECT 
+        hi.id,
+        hi.household_id,
+        hi.custom_name,
+        hi.quantity,
+        hi.unit,
+        hi.expiry_date,
+        h.name as household_name,
+        EXTRACT(DAY FROM (NOW() - hi.expiry_date)) as days_since_expiry
+      FROM household_inventory hi
+      JOIN households h ON hi.household_id = h.id
+      WHERE hi.expiry_date IS NOT NULL
+      AND hi.expiry_date < NOW() - INTERVAL '${daysAfterExpiry} days'
+      AND hi.quantity > 0
+      ORDER BY hi.expiry_date ASC
+    `);
+    
+    logger.info(`Found ${expiredItemsResult.rows.length} expired items to delete`);
+    
+    if (expiredItemsResult.rows.length === 0) {
+      return { success: true, deletedCount: 0 };
+    }
+    
+    // Csoportosítás háztartás szerint
+    const itemsByHousehold = {};
+    for (const item of expiredItemsResult.rows) {
+      if (!itemsByHousehold[item.household_id]) {
+        itemsByHousehold[item.household_id] = {
+          householdName: item.household_name,
+          items: []
+        };
+      }
+      itemsByHousehold[item.household_id].items.push({
+        id: item.id,
+        name: item.custom_name,
+        quantity: item.quantity,
+        unit: item.unit,
+        daysSinceExpiry: Math.floor(item.days_since_expiry)
+      });
+    }
+    
+    let totalDeleted = 0;
+    let totalNotificationsSent = 0;
+    
+    // Törlés és értesítés háztartásonként
+    for (const [householdId, data] of Object.entries(itemsByHousehold)) {
+      try {
+        // Töröljük a termékeket (quantity = 0)
+        const itemIds = data.items.map(item => item.id);
+        await query(`
+          UPDATE household_inventory
+          SET quantity = 0, updated_at = NOW()
+          WHERE id = ANY($1)
+        `, [itemIds]);
+        
+        totalDeleted += itemIds.length;
+        
+        logger.info(`Deleted ${itemIds.length} expired items from household ${data.householdName}`);
+        
+        // Értesítés küldése a háztartás tagjainak
+        const membersResult = await query(`
+          SELECT DISTINCT u.id
+          FROM users u
+          JOIN household_members hm ON u.id = hm.user_id
+          JOIN user_settings us ON u.id = us.user_id
+          WHERE hm.household_id = $1 
+          AND hm.left_at IS NULL
+          AND (us.consumption_notifications->>'waste_alerts')::boolean = true
+        `, [householdId]);
+        
+        if (membersResult.rows.length > 0) {
+          const notification = {
+            title: '🗑️ Lejárt Termékek Törölve',
+            body: `${data.items.length} régen lejárt termék automatikusan törölve lett a ${data.householdName} háztartásból`,
+            type: 'expired_deleted',
+            data: {
+              url: '/inventory',
+              householdId: householdId,
+              items: data.items.map(item => ({
+                name: item.name,
+                quantity: item.quantity,
+                unit: item.unit,
+                daysSinceExpiry: item.daysSinceExpiry
+              }))
+            }
+          };
+          
+          for (const member of membersResult.rows) {
+            try {
+              await pushService.sendNotificationToUser(member.id, notification);
+              totalNotificationsSent++;
+            } catch (error) {
+              logger.error(`Error sending deletion notification to user ${member.id}:`, error.message);
+            }
+          }
+        }
+        
+      } catch (error) {
+        logger.error(`Error deleting expired items for household ${householdId}:`, error);
+      }
+    }
+    
+    logger.info(`Auto-delete completed. Deleted ${totalDeleted} items, sent ${totalNotificationsSent} notifications`);
+    return { 
+      success: true, 
+      deletedCount: totalDeleted,
+      notificationsSent: totalNotificationsSent
+    };
+    
+  } catch (error) {
+    logger.error('Error in deleteExpiredProducts:', error);
+    throw error;
+  }
+}
+
+/**
  * Összes scheduler futtatása (manuális trigger)
  */
 async function runAllSchedulers() {
@@ -334,13 +459,15 @@ async function runAllSchedulers() {
     const results = {
       lowStock: await sendLowStockNotifications(),
       expiry: await sendExpiryWarnings(),
-      shopping: await sendShoppingReminders()
+      shopping: await sendShoppingReminders(),
+      autoDelete: await deleteExpiredProducts()
     };
     
     const totalSent = 
       results.lowStock.notificationsSent +
       results.expiry.notificationsSent +
-      results.shopping.notificationsSent;
+      results.shopping.notificationsSent +
+      (results.autoDelete.notificationsSent || 0);
     
     logger.info(`All schedulers completed. Total notifications sent: ${totalSent}`);
     
@@ -360,5 +487,6 @@ module.exports = {
   sendLowStockNotifications,
   sendExpiryWarnings,
   sendShoppingReminders,
+  deleteExpiredProducts,
   runAllSchedulers
 };
