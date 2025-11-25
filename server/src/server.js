@@ -43,6 +43,7 @@ const userSettingsRoutes = require('./routes/user-settings');
 const pushNotificationRoutes = require('./routes/push-notifications');
 const notificationSchedulerRoutes = require('./routes/notification-scheduler');
 const systemSettingsRoutes = require('./routes/system-settings');
+const inAppNotificationsRoutes = require('./routes/in-app-notifications');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -205,6 +206,7 @@ apiRouter.use('/users', userSettingsRoutes);
 apiRouter.use('/push', pushNotificationRoutes);
 apiRouter.use('/scheduler', notificationSchedulerRoutes);
 apiRouter.use('/system-settings', systemSettingsRoutes);
+apiRouter.use('/in-app-notifications', inAppNotificationsRoutes);
 
 app.use(`/api/${process.env.API_VERSION || 'v1'}`, apiRouter);
 

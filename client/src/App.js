@@ -15,12 +15,12 @@ import NotificationBanner from './components/NotificationBanner';
 import HouseholdManager from './components/HouseholdManager';
 import ThemeToggle from './components/ThemeToggle';
 import Utilities from './components/Utilities';
-import MinimalTest from './components/MinimalTest';
 import PWAPrompt from './components/PWAPrompt';
 import Statistics from './components/Statistics';
 import Settings from './components/Settings';
 import InstallPrompt from './components/InstallPrompt';
 import OfflineIndicator from './components/OfflineIndicator';
+import NotificationBell from './components/NotificationBell';
 // import { Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { useDarkThemeForce } from './hooks/useDarkThemeForce';
@@ -457,6 +457,7 @@ function AppContent() {
         </div>
         
         <div className="header-right">
+          <NotificationBell />
           <ThemeToggle onSettingsClick={() => setCurrentView('settings')} />
           
           <div className="user-menu">

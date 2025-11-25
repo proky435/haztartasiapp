@@ -17,29 +17,29 @@
 
 🔥 Prioritás: Magas
 📊 Költségvetés követés: Havi/heti költségvetés beállítás és nyomon követés ❌
-📈 Statisztikák: Kiadások elemzése kategóriánként, trendek 
-🔔 Intelligens értesítések: Lejárat előtti figyelmeztetések
+📈 Statisztikák: Kiadások elemzése kategóriánként, trendek  ❌
+🔔 Intelligens értesítések: Lejárat előtti figyelmeztetések ❌
 📱 Mobil app: React Native vagy PWA fejlesztés ❌
-🛍️ Bolt integráció: Online áruházak API kapcsolat árakhoz
+🛍️ Bolt integráció: Online áruházak API kapcsolat árakhoz - talan
 
 🔄 Prioritás: Közepes
-📋 Feladat kezelő: Háztartási teendők elosztása családtagok között
-🎯 Célok követése: Spórolási célok, fenntarthatósági mutatók
-📊 Készlet optimalizálás: AI alapú javaslatok készletszinthez
-🔄 Automatikus rendelés: Ismétlődő termékek auto-rendelése
-📍 Bolt térkép: Legközelebbi boltok és árak összehasonlítása
+📋 Feladat kezelő: Háztartási teendők elosztása családtagok között off
+🎯 Célok követése: Spórolási célok, fenntarthatósági mutatók off
+📊 Készlet optimalizálás: AI alapú javaslatok készletszinthez talan
+🔄 Automatikus rendelés: Ismétlődő termékek auto-rendelése ❌
+📍 Bolt térkép: Legközelebbi boltok és árak összehasonlítása nope
 🛠️ Technikai fejlesztések
 
 🔥 Prioritás: Magas
-🔐 Kétfaktoros hitelesítés: SMS/email alapú 2FA
+🔐 Kétfaktoros hitelesítés: SMS/email alapú 2FA deploymentbe
 ☁️ Fájl feltöltés: Cloudinary/AWS S3 integráció képekhez
-📱 PWA fejlesztés: Offline működés, push értesítések
-🔍 Elasticsearch: Fejlett keresési funkciók
+📱 PWA fejlesztés: Offline működés, push értesítések ❌
+🔍 Elasticsearch: Fejlett keresési funkciók 
 📊 Analytics: Google Analytics/Mixpanel integráció
 
 🔄 Prioritás: Közepes
-🤖 AI chatbot: Receptjavaslatok, háztartási tanácsok
-📧 Email értesítések: Heti összesítők, lejárati figyelmeztetések
+🤖 AI chatbot: Receptjavaslatok, háztartási tanácsok koltseges talan
+📧 Email értesítések: Heti összesítők, lejárati figyelmeztetések ❌
 🔄 API rate limiting: Külső API-k optimalizált használata
 🧪 Unit tesztek: Jest/Cypress tesztek írása
 🐳 Docker: Konténerizálás deployment-hez
@@ -47,7 +47,7 @@
 
 🔥 Prioritás: Magas
 🌙 Sötét/világos téma: Teljes téma rendszer implementálás ❌
-📱 Reszponzív design: Tablet és mobil optimalizálás 
+📱 Reszponzív design: Tablet és mobil optimalizálás ❌
 ♿ Akadálymentesítés: ARIA labelek, képernyőolvasó támogatás
 🎨 Animációk: Smooth átmenetek, loading animációk
 🔍 Gyors keresés: Global search minden modulban
@@ -69,7 +69,7 @@
 📊 Analitika és jelentések
 
 🔄 Prioritás: Közepes
-📈 Költség trendek: Havi/éves költségvetési jelentések
+📈 Költség trendek: Havi/éves költségvetési jelentések ❌
 🥘 Recept statisztikák: Legnépszerűbb receptek, főzési szokások
 📊 Készlet forgalom: Termékek felhasználási sebessége
 🎯 Célok követése: Spórolási és fenntarthatósági célok
@@ -249,4 +249,4 @@ Online bolt integráció - monetizáció
 
 
 
-a recept megosztas mukodik de valami a crt-vel nem jo 
+a recept megosztas mukodik de valami a crt-vel nem jo X

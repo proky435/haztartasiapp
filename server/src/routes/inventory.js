@@ -4,6 +4,7 @@ const { query, transaction } = require('../database/connection');
 const { authenticateToken, requireRole, requirePermission } = require('../middleware/auth');
 const logger = require('../utils/logger');
 const expiryPatternService = require('../services/expiryPatternService');
+const notificationHelper = require('../services/notificationHelper');
 
 const router = express.Router();
 
@@ -457,6 +458,27 @@ router.post('/:householdId', [
       addedBy: req.user.id
     });
 
+    // In-app értesítés küldése a háztartás többi tagjának
+    try {
+      logger.info('📬 Értesítés küldése...', {
+        userId: req.user.id,
+        householdId,
+        productName: productDetails?.name || custom_name
+      });
+      
+      await notificationHelper.notifyProductAdded({
+        userId: req.user.id,
+        householdId,
+        productName: productDetails?.name || custom_name,
+        quantity,
+        unit
+      });
+      
+      logger.info('✅ Értesítés sikeresen elküldve');
+    } catch (notifError) {
+      logger.error('❌ Értesítés küldése sikertelen:', notifError);
+    }
+
     res.status(201).json({
       message: 'Termék sikeresen hozzáadva a készlethez',
       item: {
@@ -749,6 +771,17 @@ router.delete('/:id', [
       householdId: existingItem.household_id,
       deletedBy: req.user.id
     });
+
+    // In-app értesítés küldése a háztartás többi tagjának
+    try {
+      await notificationHelper.notifyProductDeleted({
+        userId: req.user.id,
+        householdId: existingItem.household_id,
+        productName: existingItem.custom_name
+      });
+    } catch (notifError) {
+      logger.warn('Értesítés küldése sikertelen:', notifError);
+    }
 
     res.json({
       message: 'Készlet tétel sikeresen törölve'

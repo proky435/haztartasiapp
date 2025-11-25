@@ -1,0 +1,83 @@
+/* Notification Bell Styles */
+
+.notification-bell-container {
+  position: relative;
+  display: inline-block;
+}
+
+.notification-bell {
+  position: relative;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification-bell:hover {
+  background-color: var(--hover-background);
+}
+
+.bell-icon {
+  font-size: 1.5rem;
+  display: block;
+}
+
+/* Badge (olvasatlan számláló) */
+.notification-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: #f44336;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Harang rázás animáció */
+@keyframes bellShake {
+  0%, 100% { transform: rotate(0deg); }
+  10%, 30%, 50%, 70%, 90% { transform: rotate(-10deg); }
+  20%, 40%, 60%, 80% { transform: rotate(10deg); }
+}
+
+.bell-shake {
+  animation: bellShake 0.8s ease-in-out;
+}
+
+/* Badge pulse animáció */
+@keyframes badgePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+.badge-pulse {
+  animation: badgePulse 0.6s ease-in-out 2;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .bell-icon {
+    font-size: 1.3rem;
+  }
+
+  .notification-badge {
+    font-size: 0.65rem;
+    padding: 1px 5px;
+    min-width: 16px;
+  }
+}
+
+/* Dark theme support */
+[data-theme="dark"] .notification-bell:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}

@@ -1,6 +1,7 @@
 const { query } = require('../database/connection');
 const pushService = require('./pushNotificationService');
 const consumptionService = require('./consumptionTrackingService');
+const notificationHelper = require('./notificationHelper');
 const logger = require('../utils/logger');
 
 /**
@@ -94,7 +95,21 @@ async function sendLowStockNotifications() {
           // Értesítés küldése minden tagnak
           for (const member of membersResult.rows) {
             try {
+              // Push értesítés
               await pushService.sendNotificationToUser(member.id, notification);
+              
+              // In-app értesítés
+              await notificationHelper.notifyLowStock({
+                userId: member.id,
+                householdId: household.id,
+                products: lowStockItems.map(item => ({
+                  id: item.id,
+                  name: item.name,
+                  quantity: item.quantity,
+                  unit: item.unit
+                }))
+              });
+              
               totalNotificationsSent++;
             } catch (error) {
               logger.error(`Error sending notification to user ${member.id}:`, error.message);
@@ -198,7 +213,20 @@ async function sendExpiryWarnings() {
         // Értesítés küldése
         for (const member of membersResult.rows) {
           try {
+            // Push értesítés
             await pushService.sendNotificationToUser(member.id, notification);
+            
+            // In-app értesítés
+            await notificationHelper.notifyExpiringProducts({
+              userId: member.id,
+              householdId: householdId,
+              products: data.items.map(item => ({
+                id: item.id,
+                name: item.name,
+                daysLeft: item.daysUntilExpiry
+              }))
+            });
+            
             totalNotificationsSent++;
           } catch (error) {
             logger.error(`Error sending expiry warning to user ${member.id}:`, error.message);

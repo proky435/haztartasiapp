@@ -3,6 +3,7 @@ const { body, param, query: queryValidator, validationResult } = require('expres
 const { query, transaction } = require('../database/connection');
 const { authenticateToken, requireRole } = require('../middleware/auth');
 const logger = require('../utils/logger');
+const notificationHelper = require('../services/notificationHelper');
 
 const router = express.Router();
 
@@ -398,6 +399,17 @@ router.post('/:id/items', [
       listId,
       addedBy: req.user.id
     });
+
+    // In-app értesítés küldése a háztartás többi tagjának
+    try {
+      await notificationHelper.notifyShoppingItemAdded({
+        userId: req.user.id,
+        householdId,
+        itemName: custom_name || 'Új tétel'
+      });
+    } catch (notifError) {
+      logger.warn('Értesítés küldése sikertelen:', notifError);
+    }
 
     res.status(201).json({
       message: 'Tétel sikeresen hozzáadva a bevásárlólistához',
