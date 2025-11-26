@@ -92,6 +92,102 @@ function HouseholdManager({ user, currentHousehold, onHouseholdChange, onClose }
     alert('Meghívó kód vágólapra másolva!');
   };
 
+  // Kilépés háztartásból
+  const handleLeaveHousehold = async (household) => {
+    // Ellenőrizzük, hogy ez a saját háztartás-e (created_by)
+    if (household.isOwner) {
+      alert('❌ Nem léphetsz ki a saját háztartásodból!');
+      return;
+    }
+
+    const confirmLeave = window.confirm(
+      `Biztosan ki szeretnél lépni a "${household.name}" háztartásból?\n\n` +
+      `Kilépés után nem leszel képes hozzáférni a háztartás adataihoz, kivéve ha újra meghívnak.`
+    );
+
+    if (!confirmLeave) return;
+
+    try {
+      setIsLoading(true);
+      setError('');
+      await householdsService.leaveHousehold(household.id);
+      
+      // Ha az aktuális háztartásból léptünk ki, válasszunk másikat
+      if (currentHousehold?.id === household.id) {
+        await loadHouseholds();
+        const remainingHouseholds = households.filter(h => h.id !== household.id);
+        if (remainingHouseholds.length > 0) {
+          onHouseholdChange(remainingHouseholds[0]);
+        } else {
+          onHouseholdChange(null);
+        }
+      } else {
+        await loadHouseholds();
+      }
+      
+      alert('✅ Sikeresen kiléptél a háztartásból');
+    } catch (error) {
+      console.error('Error leaving household:', error);
+      setError(error.response?.data?.message || error.message || 'Hiba történt a kilépéskor');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Háztartás törlése
+  const handleDeleteHousehold = async (household) => {
+    // Ellenőrizzük, hogy ez az első háztartás-e
+    if (household.isFirstHousehold) {
+      alert('❌ Az alapértelmezett háztartást nem törölheted!');
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      `⚠️ FIGYELEM! Biztosan törölni szeretnéd a "${household.name}" háztartást?\n\n` +
+      `Ez a művelet VÉGLEGESEN törli:\n` +
+      `• Összes készlet tételt\n` +
+      `• Összes bevásárlólistát\n` +
+      `• Összes tagot\n` +
+      `• Összes kapcsolódó adatot\n\n` +
+      `Ez a művelet NEM VISSZAVONHATÓ!`
+    );
+
+    if (!confirmDelete) return;
+
+    // Dupla megerősítés
+    const finalConfirm = window.confirm(
+      `Utolsó megerősítés: Tényleg törölni akarod a "${household.name}" háztartást?`
+    );
+
+    if (!finalConfirm) return;
+
+    try {
+      setIsLoading(true);
+      setError('');
+      await householdsService.deleteHousehold(household.id);
+      
+      // Ha az aktuális háztartást töröltük, válasszunk másikat
+      if (currentHousehold?.id === household.id) {
+        await loadHouseholds();
+        const remainingHouseholds = households.filter(h => h.id !== household.id);
+        if (remainingHouseholds.length > 0) {
+          onHouseholdChange(remainingHouseholds[0]);
+        } else {
+          onHouseholdChange(null);
+        }
+      } else {
+        await loadHouseholds();
+      }
+      
+      alert('✅ Háztartás sikeresen törölve');
+    } catch (error) {
+      console.error('Error deleting household:', error);
+      setError(error.response?.data?.message || error.message || 'Hiba történt a törléskor');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="modal-overlay">
       <div className="household-manager-modal">
@@ -170,6 +266,28 @@ function HouseholdManager({ user, currentHousehold, onHouseholdChange, onClose }
                         >
                           Meghívó
                         </button>
+                        
+                        {!household.isOwner && (
+                          <button 
+                            className="leave-button"
+                            onClick={() => handleLeaveHousehold(household)}
+                            disabled={isLoading}
+                            title="Kilépés a háztartásból"
+                          >
+                            🚪 Kilépés
+                          </button>
+                        )}
+                        
+                        {household.isOwner && !household.isFirstHousehold && (
+                          <button 
+                            className="delete-button"
+                            onClick={() => handleDeleteHousehold(household)}
+                            disabled={isLoading}
+                            title="Háztartás törlése"
+                          >
+                            🗑️ Törlés
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}

@@ -16,14 +16,15 @@ router.get('/', authenticateToken, async (req, res) => {
   try {
     const result = await query(`
       SELECT 
-        h.id, h.name, h.description, h.created_at,
+        h.id, h.name, h.description, h.created_at, h.created_by,
         hm.role, hm.joined_at,
-        COUNT(hm2.id) as member_count
+        COUNT(hm2.id) as member_count,
+        ROW_NUMBER() OVER (PARTITION BY h.created_by ORDER BY hm.joined_at ASC) as household_order
       FROM households h
       JOIN household_members hm ON h.id = hm.household_id
       LEFT JOIN household_members hm2 ON h.id = hm2.household_id AND hm2.left_at IS NULL
       WHERE hm.user_id = $1 AND hm.left_at IS NULL
-      GROUP BY h.id, h.name, h.description, h.created_at, hm.role, hm.joined_at
+      GROUP BY h.id, h.name, h.description, h.created_at, h.created_by, hm.role, hm.joined_at
       ORDER BY hm.joined_at ASC
     `, [req.user.id]);
 
@@ -35,7 +36,9 @@ router.get('/', authenticateToken, async (req, res) => {
         role: household.role,
         memberCount: parseInt(household.member_count),
         joinedAt: household.joined_at,
-        createdAt: household.created_at
+        createdAt: household.created_at,
+        isOwner: household.created_by === req.user.id,
+        isFirstHousehold: household.created_by === req.user.id && household.household_order === 1
       }))
     });
 
@@ -580,6 +583,185 @@ router.delete('/:id/members/:userId', [
     res.status(500).json({
       error: 'Szerver hiba',
       message: 'Tag eltávolítása során hiba történt'
+    });
+  }
+});
+
+/**
+ * POST /api/v1/households/:id/leave
+ * Kilépés háztartásból (saját magad eltávolítása)
+ */
+router.post('/:id/leave', [
+  authenticateToken,
+  param('id').isUUID().withMessage('Érvénytelen háztartás azonosító')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        error: 'Validációs hiba',
+        details: errors.array()
+      });
+    }
+
+    const householdId = req.params.id;
+    const userId = req.user.id;
+
+    // Ellenőrizzük, hogy tag-e a háztartásban
+    const memberCheck = await query(`
+      SELECT role, joined_at
+      FROM household_members
+      WHERE household_id = $1 AND user_id = $2 AND left_at IS NULL
+    `, [householdId, userId]);
+
+    if (memberCheck.rows.length === 0) {
+      return res.status(404).json({
+        error: 'Nem vagy tagja ennek a háztartásnak'
+      });
+    }
+
+    // Ellenőrizzük, hogy ez az első (saját) háztartás-e
+    // Az első háztartás az, ahol a felhasználó admin és ő hozta létre
+    const householdInfo = await query(`
+      SELECT h.id, h.created_by, hm.role
+      FROM households h
+      JOIN household_members hm ON h.id = hm.household_id
+      WHERE h.id = $1 AND hm.user_id = $2 AND hm.left_at IS NULL
+    `, [householdId, userId]);
+
+    if (householdInfo.rows.length > 0) {
+      const household = householdInfo.rows[0];
+      
+      // Ha ez a saját háztartás (created_by = userId), akkor nem lehet kilépni
+      if (household.created_by === userId) {
+        return res.status(400).json({
+          error: 'Nem léphetsz ki a saját háztartásodból',
+          message: 'Az általad létrehozott háztartásból nem tudsz kilépni'
+        });
+      }
+    }
+
+    // Ha admin vagy, ellenőrizzük, hogy van-e másik admin
+    if (memberCheck.rows[0].role === 'admin') {
+      const adminCount = await query(`
+        SELECT COUNT(*) as admin_count
+        FROM household_members
+        WHERE household_id = $1 AND role = 'admin' AND left_at IS NULL
+      `, [householdId]);
+
+      if (parseInt(adminCount.rows[0].admin_count) <= 1) {
+        return res.status(400).json({
+          error: 'Nem léphetsz ki',
+          message: 'Legalább egy adminnak maradnia kell a háztartásban. Nevezz ki egy másik admint kilépés előtt.'
+        });
+      }
+    }
+
+    // Kilépés - left_at beállítása
+    await query(`
+      UPDATE household_members
+      SET left_at = NOW()
+      WHERE household_id = $1 AND user_id = $2 AND left_at IS NULL
+    `, [householdId, userId]);
+
+    logger.info('User left household', {
+      householdId,
+      userId
+    });
+
+    res.json({
+      message: 'Sikeresen kiléptél a háztartásból'
+    });
+
+  } catch (error) {
+    logger.logError(error, req, { operation: 'leaveHousehold' });
+    res.status(500).json({
+      error: 'Szerver hiba',
+      message: 'Kilépés során hiba történt'
+    });
+  }
+});
+
+/**
+ * DELETE /api/v1/households/:id
+ * Háztartás törlése (csak a tulajdonos törölheti, kivéve az első háztartást)
+ */
+router.delete('/:id', [
+  authenticateToken,
+  param('id').isUUID().withMessage('Érvénytelen háztartás azonosító')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        error: 'Validációs hiba',
+        details: errors.array()
+      });
+    }
+
+    const householdId = req.params.id;
+    const userId = req.user.id;
+
+    // Ellenőrizzük, hogy a felhasználó a tulajdonos-e
+    const householdCheck = await query(`
+      SELECT h.id, h.name, h.created_by
+      FROM households h
+      WHERE h.id = $1
+    `, [householdId]);
+
+    if (householdCheck.rows.length === 0) {
+      return res.status(404).json({
+        error: 'Háztartás nem található'
+      });
+    }
+
+    const household = householdCheck.rows[0];
+
+    // Csak a tulajdonos törölheti
+    if (household.created_by !== userId) {
+      return res.status(403).json({
+        error: 'Nincs jogosultságod',
+        message: 'Csak a háztartás létrehozója törölheti'
+      });
+    }
+
+    // Ellenőrizzük, hogy ez az első (alapértelmezett) háztartás-e
+    const firstHouseholdCheck = await query(`
+      SELECT h.id
+      FROM households h
+      JOIN household_members hm ON h.id = hm.household_id
+      WHERE h.created_by = $1
+        AND hm.user_id = $1
+        AND hm.left_at IS NULL
+      ORDER BY hm.joined_at ASC
+      LIMIT 1
+    `, [userId]);
+
+    if (firstHouseholdCheck.rows.length > 0 && firstHouseholdCheck.rows[0].id === householdId) {
+      return res.status(400).json({
+        error: 'Nem törölheted az első háztartásodat',
+        message: 'Az alapértelmezett háztartás nem törölhető'
+      });
+    }
+
+    // Töröljük a háztartást (CASCADE miatt minden kapcsolódó adat is törlődik)
+    await query('DELETE FROM households WHERE id = $1', [householdId]);
+
+    logger.info('Household deleted', {
+      householdId,
+      householdName: household.name,
+      deletedBy: userId
+    });
+
+    res.json({
+      message: 'Háztartás sikeresen törölve'
+    });
+
+  } catch (error) {
+    logger.logError(error, req, { operation: 'deleteHousehold' });
+    res.status(500).json({
+      error: 'Szerver hiba',
+      message: 'Háztartás törlése során hiba történt'
     });
   }
 });

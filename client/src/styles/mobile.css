@@ -128,23 +128,34 @@
 
   /* Modal optimizations */
   .modal-overlay {
-    padding: 1rem;
+    padding: 0;
     align-items: flex-end;
   }
 
-  .modal {
-    max-height: 90vh;
+  .modal,
+  .modal-content,
+  .recipe-modal {
+    max-height: 95vh !important;
+    height: auto;
     width: 100%;
     max-width: none;
     margin: 0;
     border-radius: 16px 16px 0 0;
     transform: translateY(0);
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
   }
 
   .modal-header {
     padding: 1rem;
     border-radius: 16px 16px 0 0;
-    position: relative;
+    position: sticky;
+    top: 0;
+    background: var(--surface-primary-color);
+    z-index: 10;
+    flex-shrink: 0;
   }
 
   .modal-header::before {
@@ -159,20 +170,40 @@
     border-radius: 2px;
   }
 
-  .modal-body {
+  .modal-body,
+  .modal-content > div:not(.modal-header),
+  .edit-content,
+  .calculator-content {
     padding: 0 1rem 1rem;
-    max-height: calc(90vh - 120px);
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    flex: 1;
   }
 
   .modal-footer {
     padding: 1rem;
     border-radius: 0 0 16px 16px;
     gap: 0.5rem;
+    position: sticky;
+    bottom: 0;
+    background: var(--surface-primary-color);
+    z-index: 10;
+    flex-shrink: 0;
   }
 
   .modal-footer .btn {
     flex: 1;
+  }
+
+  /* Recipe modal specifikus */
+  .recipe-modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .recipe-modal {
+    max-height: 95vh !important;
+    border-radius: 16px 16px 0 0;
   }
 
   /* Table optimizations */

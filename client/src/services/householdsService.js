@@ -5,7 +5,10 @@ class HouseholdsService {
   async getUserHouseholds() {
     try {
       const response = await apiService.get('/households');
-      return response.households || [];
+      return (response.households || []).map(h => ({
+        ...h,
+        userRole: h.role // Átnevezzük a role-t userRole-ra a frontend számára
+      }));
     } catch (error) {
       console.error('Get user households error:', error);
       throw error;
@@ -70,13 +73,35 @@ class HouseholdsService {
     }
   }
 
-  // Tag eltávolítása háztartásból
+  // Tag eltávolítása háztartásból (admin által)
   async removeMember(householdId, userId) {
     try {
       await apiService.delete(`/households/${householdId}/members/${userId}`);
       return true;
     } catch (error) {
       console.error('Remove member error:', error);
+      throw error;
+    }
+  }
+
+  // Kilépés háztartásból (saját magad eltávolítása)
+  async leaveHousehold(householdId) {
+    try {
+      const response = await apiService.post(`/households/${householdId}/leave`);
+      return response;
+    } catch (error) {
+      console.error('Leave household error:', error);
+      throw error;
+    }
+  }
+
+  // Háztartás törlése (csak tulajdonos, kivéve az első háztartást)
+  async deleteHousehold(householdId) {
+    try {
+      const response = await apiService.delete(`/households/${householdId}`);
+      return response;
+    } catch (error) {
+      console.error('Delete household error:', error);
       throw error;
     }
   }
