@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import ThemeToggle from './ThemeToggle';
 import api from '../services/api';
 import pushNotificationService from '../services/pushNotificationService';
@@ -41,6 +42,10 @@ function Settings({ user, currentHousehold, onUpdateProfile, onShowHouseholdMana
   });
   const [cronStatus, setCronStatus] = useState(null);
   const [isLoadingCron, setIsLoadingCron] = useState(true);
+  
+  // PWA Install Prompt
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [canInstall, setCanInstall] = useState(false);
 
   // User prop változásának figyelése
   useEffect(() => {
@@ -49,6 +54,27 @@ function Settings({ user, currentHousehold, onUpdateProfile, onShowHouseholdMana
       email: user.email
     });
   }, [user]);
+
+  // PWA Install Prompt listener
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      console.log('beforeinstallprompt event caught in Settings!');
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setCanInstall(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Ellenőrizzük, hogy már telepítve van-e
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setCanInstall(false);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
 
   // Tracking beállítások betöltése
   useEffect(() => {
@@ -223,16 +249,16 @@ function Settings({ user, currentHousehold, onUpdateProfile, onShowHouseholdMana
         // Leiratkozás
         await pushNotificationService.unsubscribeFromPushNotifications();
         setPushEnabled(false);
-        alert('✅ Push értesítések kikapcsolva');
+        toast.success('Push értesítések kikapcsolva! ✅');
       } else {
         // Feliratkozás
         await pushNotificationService.subscribeToPushNotifications();
         setPushEnabled(true);
-        alert('✅ Push értesítések bekapcsolva');
+        toast.success('Push értesítések bekapcsolva! ✅');
       }
     } catch (error) {
       console.error('Error toggling push notifications:', error);
-      alert('❌ Hiba: ' + (error.message || 'Push értesítések beállítása sikertelen'));
+      toast.error('Hiba: ' + (error.message || 'Push értesítések beállítása sikertelen'));
     }
   };
 
@@ -240,10 +266,10 @@ function Settings({ user, currentHousehold, onUpdateProfile, onShowHouseholdMana
   const handleSendTestNotification = async () => {
     try {
       await pushNotificationService.sendTestNotification();
-      alert('✅ Teszt értesítés elküldve! Nézd meg az értesítéseid.');
+      toast.success('Teszt értesítés elküldve! Nézd meg az értesítéseid. 🔔');
     } catch (error) {
       console.error('Error sending test notification:', error);
-      alert('❌ Hiba: ' + (error.message || 'Teszt értesítés küldése sikertelen'));
+      toast.error('Hiba: ' + (error.message || 'Teszt értesítés küldése sikertelen'));
     }
   };
 
@@ -251,10 +277,10 @@ function Settings({ user, currentHousehold, onUpdateProfile, onShowHouseholdMana
   const handleTriggerScheduler = async () => {
     try {
       const response = await api.post('/scheduler/run-all');
-      alert(`✅ ${response.message}\n\nRészletek:\n- Készlet: ${response.details.lowStock.notificationsSent}\n- Lejárat: ${response.details.expiry.notificationsSent}\n- Vásárlás: ${response.details.shopping.notificationsSent}`);
+      toast.success(`${response.message} - Készlet: ${response.details.lowStock.notificationsSent}, Lejárat: ${response.details.expiry.notificationsSent}, Vásárlás: ${response.details.shopping.notificationsSent}`);
     } catch (error) {
       console.error('Error triggering scheduler:', error);
-      alert('❌ Hiba: ' + (error.message || 'Scheduler futtatása sikertelen'));
+      toast.error('Hiba: ' + (error.message || 'Scheduler futtatása sikertelen'));
     }
   };
 
@@ -276,10 +302,43 @@ function Settings({ user, currentHousehold, onUpdateProfile, onShowHouseholdMana
         setCronStatus(response.status);
       }
       
-      alert(newEnabled ? '✅ Automatikus értesítések bekapcsolva' : '⚠️ Automatikus értesítések kikapcsolva');
+      newEnabled ? toast.success('Automatikus értesítések bekapcsolva! ✅') : toast.warning('Automatikus értesítések kikapcsolva! ⚠️');
     } catch (error) {
       console.error('Error toggling cron:', error);
-      alert('❌ Hiba: ' + (error.message || 'Cron beállítás sikertelen'));
+      toast.error('Hiba: ' + (error.message || 'Cron beállítás sikertelen'));
+    }
+  };
+
+  // PWA Install handler
+  const handleInstallPWA = async () => {
+    if (!deferredPrompt) {
+      toast.warning('A telepítés jelenleg nem elérhető. Az alkalmazás már telepítve van, vagy a böngésző nem támogatja. ⚠️');
+      return;
+    }
+
+    try {
+      // Prompt megjelenítése
+      console.log('Showing install prompt...');
+      deferredPrompt.prompt();
+
+      // Várjuk a user választását
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`User choice: ${outcome}`);
+
+      if (outcome === 'accepted') {
+        console.log('✅ User elfogadta a telepítést');
+        toast.success('Alkalmazás telepítése megkezdődött! ✅');
+        setCanInstall(false);
+      } else {
+        console.log('❌ User elutasította a telepítést');
+        toast.info('Telepítés megszakítva ℹ️');
+      }
+
+      // Prompt elrejtése
+      setDeferredPrompt(null);
+    } catch (error) {
+      console.error('Install error:', error);
+      toast.error('Hiba történt a telepítés során: ' + error.message);
     }
   };
 
@@ -640,15 +699,78 @@ function Settings({ user, currentHousehold, onUpdateProfile, onShowHouseholdMana
             <p><strong>Standalone mód:</strong> {window.matchMedia('(display-mode: standalone)').matches ? '✓ Telepítve' : '✗ Böngészőben'}</p>
             <p><strong>Online állapot:</strong> {navigator.onLine ? '✓ Online' : '✗ Offline'}</p>
             <p><strong>HTTPS:</strong> {window.location.protocol === 'https:' ? '✓ Biztonságos' : '⚠ HTTP'}</p>
-            <button 
-              className="settings-action-btn"
-              onClick={() => {
-                localStorage.removeItem('pwa-install-dismissed');
-                alert('Install prompt reset! Frissítsd az oldalt.');
-              }}
-            >
-              Install Prompt Reset
-            </button>
+            <p><strong>Install Prompt:</strong> {(() => {
+              const dismissed = localStorage.getItem('pwa-install-dismissed');
+              if (!dismissed) return '✓ Aktív';
+              const dismissedTime = parseInt(dismissed);
+              const daysSince = Math.floor((Date.now() - dismissedTime) / (1000 * 60 * 60 * 24));
+              return `⏸ Elrejtve (${daysSince} napja)`;
+            })()}</p>
+            <p><strong>Telepítés elérhető:</strong> {canInstall ? '✓ Igen' : '✗ Nem'}</p>
+            
+            {/* Fő telepítés gomb */}
+            {canInstall ? (
+              <button 
+                className="settings-action-btn primary-install-btn"
+                onClick={handleInstallPWA}
+                style={{ 
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  padding: '12px 24px',
+                  marginTop: '12px',
+                  marginBottom: '12px'
+                }}
+              >
+                📱 Alkalmazás Telepítése
+              </button>
+            ) : (
+              <button 
+                className="settings-action-btn"
+                onClick={handleInstallPWA}
+                style={{ 
+                  background: '#6c757d',
+                  color: 'white',
+                  fontSize: '14px',
+                  padding: '10px 20px',
+                  marginTop: '12px',
+                  marginBottom: '12px',
+                  opacity: 0.7
+                }}
+              >
+                ℹ️ Telepítés nem elérhető
+              </button>
+            )}
+            
+            {/* Debug gombok */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
+              <button 
+                className="settings-action-btn"
+                onClick={() => {
+                  if (window.confirm('Biztosan visszaállítod az install prompt-ot? Az oldal újratöltődik.')) {
+                    localStorage.removeItem('pwa-install-dismissed');
+                    console.log('Install prompt dismissed flag törölve');
+                    // Oldal újratöltése 500ms késleltetéssel
+                    setTimeout(() => {
+                      window.location.reload();
+                    }, 500);
+                  }
+                }}
+              >
+                🔄 Reset & Reload
+              </button>
+              <button 
+                className="settings-action-btn"
+                onClick={() => {
+                  localStorage.removeItem('pwa-install-dismissed');
+                  console.log('Install prompt dismissed flag törölve - nincs reload');
+                  toast.info('Install prompt visszaállítva! 5 másodperc múlva megjelenik (ha támogatott). ℹ️');
+                }}
+              >
+                ✓ Reset (nincs reload)
+              </button>
+            </div>
           </div>
         </div>
 

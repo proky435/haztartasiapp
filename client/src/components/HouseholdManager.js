@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import householdsService from '../services/householdsService';
 import './HouseholdManager.css';
 
@@ -89,14 +90,14 @@ function HouseholdManager({ user, currentHousehold, onHouseholdChange, onClose }
   // Meghívó kód másolása
   const copyInviteCode = () => {
     navigator.clipboard.writeText(generatedInviteCode);
-    alert('Meghívó kód vágólapra másolva!');
+    toast.success('Meghívó kód vágólapra másolva! 📋');
   };
 
   // Kilépés háztartásból
   const handleLeaveHousehold = async (household) => {
     // Ellenőrizzük, hogy ez a saját háztartás-e (created_by)
     if (household.isOwner) {
-      alert('❌ Nem léphetsz ki a saját háztartásodból!');
+      toast.warning('Nem léphetsz ki a saját háztartásodból! ⚠️');
       return;
     }
 
@@ -125,7 +126,7 @@ function HouseholdManager({ user, currentHousehold, onHouseholdChange, onClose }
         await loadHouseholds();
       }
       
-      alert('✅ Sikeresen kiléptél a háztartásból');
+      toast.success('Sikeresen kiléptél a háztartásból! ✅');
     } catch (error) {
       console.error('Error leaving household:', error);
       setError(error.response?.data?.message || error.message || 'Hiba történt a kilépéskor');
@@ -138,7 +139,7 @@ function HouseholdManager({ user, currentHousehold, onHouseholdChange, onClose }
   const handleDeleteHousehold = async (household) => {
     // Ellenőrizzük, hogy ez az első háztartás-e
     if (household.isFirstHousehold) {
-      alert('❌ Az alapértelmezett háztartást nem törölheted!');
+      toast.warning('Az alapértelmezett háztartást nem törölheted! ⚠️');
       return;
     }
 
@@ -179,7 +180,7 @@ function HouseholdManager({ user, currentHousehold, onHouseholdChange, onClose }
         await loadHouseholds();
       }
       
-      alert('✅ Háztartás sikeresen törölve');
+      toast.success('Háztartás sikeresen törölve! 🗑️');
     } catch (error) {
       console.error('Error deleting household:', error);
       setError(error.response?.data?.message || error.message || 'Hiba történt a törléskor');

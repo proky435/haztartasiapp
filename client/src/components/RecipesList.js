@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import recipesService from '../services/recipesService';
 import inventoryService from '../services/inventoryService';
 import customRecipesService from '../services/customRecipesService';
@@ -106,7 +107,7 @@ function RecipesList({ currentHousehold }) {
   // Saját recept mentése
   const saveCustomRecipe = async () => {
     if (!newRecipe.title.trim() || newRecipe.ingredients.filter(i => i.trim()).length === 0) {
-      alert('Kérlek add meg a recept címét és legalább egy hozzávalót!');
+      toast.warning('Kérlek add meg a recept címét és legalább egy hozzávalót! ⚠️');
       return;
     }
 
@@ -138,7 +139,7 @@ function RecipesList({ currentHousehold }) {
       });
       setShowAddRecipe(false);
       
-      alert('Recept sikeresen mentve!');
+      toast.success('Recept sikeresen mentve! 📝');
     } catch (error) {
       console.error('Hiba a recept mentésekor:', error);
       
@@ -171,7 +172,7 @@ function RecipesList({ currentHousehold }) {
       });
       setShowAddRecipe(false);
       
-      alert('Recept helyileg mentve. Szinkronizálás a következő alkalommal történik.');
+      toast.info('Recept helyileg mentve. Szinkronizálás a következő alkalommal történik. 💾');
     } finally {
       setIsLoading(false);
     }
@@ -196,7 +197,7 @@ function RecipesList({ currentHousehold }) {
       // LocalStorage frissítése
       customRecipesService.saveToLocalStorage(updated, currentHousehold?.id);
       
-      alert('Recept sikeresen törölve!');
+      toast.success('Recept sikeresen törölve! 🗑️');
     } catch (error) {
       console.error('Hiba a recept törlésekor:', error);
       
@@ -205,7 +206,7 @@ function RecipesList({ currentHousehold }) {
       setCustomRecipes(updated);
       customRecipesService.saveToLocalStorage(updated, currentHousehold?.id);
       
-      alert('Recept helyileg törölve. Szinkronizálás a következő alkalommal történik.');
+      toast.info('Recept helyileg törölve. Szinkronizálás a következő alkalommal történik. 💾');
     } finally {
       setIsLoading(false);
     }
@@ -217,7 +218,7 @@ function RecipesList({ currentHousehold }) {
       setIsLoading(true);
       
       if (!recipe.ingredients || recipe.ingredients.length === 0) {
-        alert('Ehhez a recepthez nincsenek hozzávalók megadva.');
+        toast.warning('Ehhez a recepthez nincsenek hozzávalók megadva. ⚠️');
         return;
       }
 
@@ -227,7 +228,7 @@ function RecipesList({ currentHousehold }) {
       );
 
       if (validIngredients.length === 0) {
-        alert('Nincsenek érvényes hozzávalók a receptben.');
+        toast.warning('Nincsenek érvényes hozzávalók a receptben. ⚠️');
         return;
       }
 
@@ -261,16 +262,16 @@ function RecipesList({ currentHousehold }) {
       if (addedCount > 0) {
         const message = errorCount > 0 
           ? `${addedCount} hozzávaló hozzáadva a bevásárlólistához. ${errorCount} hiba történt.`
-          : `${addedCount} hozzávaló sikeresen hozzáadva a bevásárlólistához!`;
+          : `${addedCount} hozzávaló sikeresen hozzáadva a bevásárlólistához! 🛍️`;
         
-        alert(message);
+        errorCount > 0 ? toast.warning(message) : toast.success(message);
       } else {
-        alert('Nem sikerült hozzáadni a hozzávalókat a bevásárlólistához.');
+        toast.error('Nem sikerült hozzáadni a hozzávalókat a bevásárlólistához. ❌');
       }
 
     } catch (error) {
       console.error('Hiba a bevásárlólista frissítésekor:', error);
-      alert('Hiba történt a bevásárlólista frissítésekor: ' + error.message);
+      toast.error('Hiba történt a bevásárlólista frissítésekor: ' + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -285,7 +286,7 @@ function RecipesList({ currentHousehold }) {
       const detailedRecipe = await recipesService.getRecipeDetails(recipe.id);
       
       if (!detailedRecipe.extendedIngredients || detailedRecipe.extendedIngredients.length === 0) {
-        alert('Ehhez a recepthez nincsenek hozzávalók megadva.');
+        toast.warning('Ehhez a recepthez nincsenek hozzávalók megadva. ⚠️');
         return;
       }
 
@@ -319,16 +320,16 @@ function RecipesList({ currentHousehold }) {
       if (addedCount > 0) {
         const message = errorCount > 0 
           ? `${addedCount} hozzávaló hozzáadva a bevásárlólistához. ${errorCount} hiba történt.`
-          : `${addedCount} hozzávaló sikeresen hozzáadva a bevásárlólistához!`;
+          : `${addedCount} hozzávaló sikeresen hozzáadva a bevásárlólistához! 🛍️`;
         
-        alert(message);
+        errorCount > 0 ? toast.warning(message) : toast.success(message);
       } else {
-        alert('Nem sikerült hozzáadni a hozzávalókat a bevásárlólistához.');
+        toast.error('Nem sikerült hozzáadni a hozzávalókat a bevásárlólistához. ❌');
       }
 
     } catch (error) {
       console.error('Hiba a Spoonacular recept bevásárlólista frissítésekor:', error);
-      alert('Hiba történt a recept részleteinek lekérésekor: ' + error.message);
+      toast.error('Hiba történt a recept részleteinek lekérésekor: ' + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -383,7 +384,7 @@ function RecipesList({ currentHousehold }) {
   const handleImportSuccess = (importedRecipe) => {
     // Frissítjük a saját receptek listáját
     loadCustomRecipes();
-    alert(`Recept "${importedRecipe.title}" sikeresen importálva!`);
+    toast.success(`Recept "${importedRecipe.title}" sikeresen importálva! 📥`);
   };
 
   // Hozzávaló hozzáadása/eltávolítása az új recepthez
@@ -528,7 +529,7 @@ function RecipesList({ currentHousehold }) {
       
       // Itt integrálhatnánk a bevásárlólista szolgáltatással
       console.log('Hiányzó hozzávalók:', missing.missing);
-      alert(`${missing.missing.length} hiányzó hozzávaló hozzáadva a bevásárlólistához!`);
+      toast.success(`${missing.missing.length} hiányzó hozzávaló hozzáadva a bevásárlólistához! 🛍️`);
     } catch (error) {
       console.error('Error adding to shopping list:', error);
     }

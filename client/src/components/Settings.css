@@ -1,6 +1,31 @@
 /* A fő settings stílusok az App.css-ben vannak */
 /* Itt csak a profil szerkesztő specifikus stílusok vannak */
 
+/* PWA Install Button */
+.primary-install-btn {
+  width: 100%;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.primary-install-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.primary-install-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+[data-theme="dark"] .primary-install-btn {
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+}
+
+[data-theme="dark"] .primary-install-btn:hover {
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
+}
+
 /* Profil megjelenítés */
 .profile-display {
   display: flex;

@@ -307,29 +307,29 @@ main {
   .main-navigation {
     order: 3;
     width: 100%;
-    margin-top: 12px;
+    margin-top: 10px;
     display: flex;
-    justify-content: space-around;
-    gap: 6px;
-    padding: 8px;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 6px;
   }
   
   .nav-button {
-    padding: 12px 8px;
-    min-height: 60px;
+    padding: 10px 6px;
+    min-height: 56px;
     flex: 1;
-    min-width: 0;
-    max-width: 90px;
-    gap: 6px;
+    min-width: 60px;
+    max-width: 85px;
+    gap: 5px;
   }
   
   .nav-button .nav-text {
     display: block;
-    font-size: 10px;
+    font-size: 9.5px;
   }
   
   .nav-button .nav-icon {
-    font-size: 1.3rem;
+    font-size: 20px;
   }
   
   .nav-button .nav-badge {
@@ -421,33 +421,44 @@ main {
     font-size: 1rem;
   }
   
-  /* Navigációs gombok grid layoutban */
+  /* Navigációs gombok - 1 sor, vízszintes */
   .main-navigation {
     order: 2;
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 4px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 2px;
     width: 100%;
-    margin-top: 8px;
-    padding: 4px;
+    margin-top: 6px;
+    padding: 3px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  
+  .main-navigation::-webkit-scrollbar {
+    display: none;
   }
   
   .nav-button {
-    padding: 8px 4px;
-    min-height: 56px;
-    gap: 4px;
-    border-radius: 10px;
-    min-width: 0;
+    padding: 6px 3px;
+    min-height: 48px;
+    gap: 3px;
+    border-radius: 8px;
+    min-width: 52px;
+    flex: 1;
+    max-width: 70px;
   }
   
   .nav-button .nav-text {
     display: block;
-    font-size: 9px;
+    font-size: 8.5px;
     text-align: center;
+    line-height: 1.1;
   }
   
   .nav-button .nav-icon {
-    font-size: 20px;
+    font-size: 18px;
   }
   
   .nav-button .nav-badge {
@@ -510,17 +521,23 @@ main {
   }
   
   .main-navigation {
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    gap: 3px;
+    gap: 2px;
+    padding: 2px;
   }
   
   .nav-button {
-    padding: 4px 2px;
-    min-height: 40px;
+    padding: 5px 2px;
+    min-height: 44px;
+    min-width: 48px;
+    max-width: 65px;
+  }
+  
+  .nav-button .nav-text {
+    font-size: 8px;
   }
   
   .nav-button .nav-icon {
-    font-size: 1.2rem;
+    font-size: 16px;
   }
   
   .nav-button .nav-badge {

@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import { toastMessages } from './utils/toastConfig';
+import 'react-toastify/dist/ReactToastify.css';
+import './styles/toast-custom.css';
 import './App.css';
 import './styles/themes.css';
 import './styles/dark-theme-fixes.css';
@@ -19,8 +23,10 @@ import PWAPrompt from './components/PWAPrompt';
 import Statistics from './components/Statistics';
 import Settings from './components/Settings';
 import InstallPrompt from './components/InstallPrompt';
+import Dashboard from './components/Dashboard';
 import OfflineIndicator from './components/OfflineIndicator';
 import NotificationBell from './components/NotificationBell';
+import FloatingActionButton from './components/FloatingActionButton';
 // import { Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { useDarkThemeForce } from './hooks/useDarkThemeForce';
@@ -41,7 +47,7 @@ function AppContent() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showHouseholdManager, setShowHouseholdManager] = useState(false);
-  const [currentView, setCurrentView] = useState('inventory'); // 'inventory', 'shopping', 'recipes', 'utilities', 'settings'
+  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'inventory', 'shopping', 'recipes', 'utilities', 'statistics', 'settings'
   const [isLoading, setIsLoading] = useState(true);
   const [shoppingItems, setShoppingItems] = useState([]);
   const [products, setProducts] = useState([]);
@@ -60,6 +66,28 @@ function AppContent() {
     setIsModalOpen(false);
   };
 
+  // FAB handler funkciók
+  const handleFabAddProduct = () => {
+    setCurrentView('inventory');
+    setTimeout(() => setIsModalOpen(true), 100);
+  };
+
+  const handleFabAddShoppingItem = () => {
+    setCurrentView('shopping');
+  };
+
+  const handleFabAddRecipe = () => {
+    setCurrentView('recipes');
+  };
+
+  const handleFabAddUtility = () => {
+    setCurrentView('utilities');
+  };
+
+  const handleFabGoHome = () => {
+    setCurrentView('dashboard');
+  };
+
   const handleAddProduct = async (newProduct) => {
     console.log('handleAddProduct called with:', newProduct);
     try {
@@ -71,6 +99,7 @@ function AppContent() {
       await loadInventory(); // Frissítjük a listát
       console.log('Closing modal...');
       setIsModalOpen(false);
+      toast.success(toastMessages.productAdded);
     } catch (error) {
       console.error('Error adding product:', error);
       console.error('Error details:', {
@@ -79,7 +108,7 @@ function AppContent() {
         data: error.data,
         response: error.response
       });
-      alert('Hiba történt a termék hozzáadásakor: ' + JSON.stringify(error.data || error.message));
+      toast.error('Hiba történt a termék hozzáadásakor: ' + (error.message || 'Ismeretlen hiba'));
     } finally {
       setInventoryLoading(false);
     }
@@ -108,6 +137,7 @@ function AppContent() {
       // Backend frissítés
       await inventoryService.updateInventoryItem(productId, { quantity: newQuantity });
       console.log('Termék sikeresen frissítve a backend-en');
+      toast.success(toastMessages.productUpdated);
       
       // Biztonsági újratöltés (ha szükséges)
       setTimeout(() => {
@@ -118,7 +148,7 @@ function AppContent() {
       console.error('Error updating product:', error);
       // Ha hiba volt, töltjük újra a listát a backend-ről
       await loadInventory();
-      alert('Hiba történt a termék frissítésekor: ' + error.message);
+      toast.error('Hiba történt a termék frissítésekor: ' + error.message);
     }
   };
 
@@ -134,6 +164,7 @@ function AppContent() {
       // Backend törlés
       await inventoryService.deleteInventoryItem(productId);
       console.log('Termék sikeresen törölve a backend-en');
+      toast.success(toastMessages.productDeleted);
       
       // Biztonsági újratöltés
       setTimeout(() => {
@@ -144,7 +175,7 @@ function AppContent() {
       console.error('Error deleting product:', error);
       // Ha hiba volt, töltjük újra a listát a backend-ről
       await loadInventory();
-      alert('Hiba történt a termék törlésekor: ' + error.message);
+      toast.error('Hiba történt a termék törlésekor: ' + error.message);
     }
   };
 
@@ -417,6 +448,13 @@ function AppContent() {
           
           <nav className="main-navigation">
             <button 
+              className={`nav-button ${currentView === 'dashboard' ? 'active' : ''}`}
+              onClick={() => setCurrentView('dashboard')}
+            >
+              <span className="nav-icon">🏠</span>
+              <span className="nav-text">Főoldal</span>
+            </button>
+            <button 
               className={`nav-button ${currentView === 'inventory' ? 'active' : ''}`}
               onClick={() => setCurrentView('inventory')}
             >
@@ -484,7 +522,12 @@ function AppContent() {
       </header>
       
       <main>
-        {currentView === 'inventory' ? (
+        {currentView === 'dashboard' ? (
+          <Dashboard 
+            currentHousehold={currentHousehold}
+            onNavigate={setCurrentView}
+          />
+        ) : currentView === 'inventory' ? (
           inventoryLoading ? (
             <div className="loading-state">
               <div className="spinner"></div>
@@ -558,6 +601,28 @@ function AppContent() {
       
       {/* PWA Prompt */}
       <PWAPrompt />
+      
+      {/* Floating Action Button - csak mobilon/tableten */}
+      <FloatingActionButton
+        onAddProduct={handleFabAddProduct}
+        onAddShoppingItem={handleFabAddShoppingItem}
+        onAddRecipe={handleFabAddRecipe}
+        onAddUtility={handleFabAddUtility}
+      />
+      
+      {/* Toast Container */}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
     </div>
   );
 }

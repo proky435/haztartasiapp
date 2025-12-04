@@ -196,20 +196,61 @@
   border: none;
 }
 
-.rent-card .stat-header {
+/* Dark theme rent card */
+[data-theme="dark"] .rent-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+[data-theme="dark"] .rent-card .stat-header {
   border-bottom-color: rgba(255, 255, 255, 0.2);
 }
 
-.rent-card .stat-label {
+[data-theme="dark"] .rent-card .stat-name {
+  color: white;
+}
+
+[data-theme="dark"] .rent-card .stat-label {
   color: rgba(255, 255, 255, 0.9);
 }
 
-.rent-card .stat-value {
+[data-theme="dark"] .rent-card .stat-value {
   color: white;
   font-weight: 600;
 }
 
-.rent-card .total-cost {
+[data-theme="dark"] .rent-card .total-cost {
+  font-size: 1.1em;
+  font-weight: 700;
+  color: #ffd700;
+}
+
+/* Light theme rent card */
+[data-theme="light"] .rent-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+[data-theme="light"] .rent-card .stat-header {
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="light"] .rent-card .stat-name {
+  color: white;
+  font-weight: 600;
+}
+
+[data-theme="light"] .rent-card .stat-label {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 500;
+}
+
+[data-theme="light"] .rent-card .stat-value {
+  color: white;
+  font-weight: 700;
+}
+
+[data-theme="light"] .rent-card .total-cost {
   font-size: 1.1em;
   font-weight: 700;
   color: #ffd700;
@@ -231,7 +272,7 @@
 .stat-name {
   font-weight: 600;
   font-size: 1.1rem;
-  color: var(--text-color);
+  color: var(--text-primary-color);
 }
 
 .stat-values {
@@ -247,8 +288,9 @@
 }
 
 .stat-label {
-  color: var(--text-secondary);
+  color: var(--text-secondary-color);
   font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .stat-value {
@@ -483,8 +525,10 @@
   width: 100%;
   max-width: 500px;
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-header {
@@ -493,6 +537,7 @@
   align-items: center;
   padding: 20px 20px 0 20px;
   margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
 .modal-header h3 {
@@ -524,6 +569,10 @@
 /* Form */
 .modal-content form {
   padding: 0 20px 20px 20px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .form-group {
@@ -678,36 +727,30 @@
   --primary-color-alpha: rgba(0, 123, 255, 0.25);
   --secondary-color: #6c757d;
   --secondary-hover: #545b62;
-  --success-color: #28a745;
-  --success-hover: #218838;
-  --info-background: #e7f3ff;
-  --info-border: #b3d9ff;
-  --info-text: #0c5aa6;
-  --background-color: #ffffff;
-  --card-background: #ffffff;
-  --text-color: #333333;
-  --text-secondary: #666666;
-  --border-color: #dee2e6;
-  --border-light: #f1f3f4;
-  --input-background: #ffffff;
-  --header-background: #f8f9fa;
-  --row-hover: #f8f9fa;
-  --secondary-background: #f8f9fa;
-  --shadow-color: rgba(0, 0, 0, 0.1);
+  /* Use global theme variables */
+  --card-background: var(--surface-color);
+  --text-color: var(--text-primary-color);
+  --text-secondary: var(--text-secondary-color);
+  --input-background: var(--surface-color);
+  --header-background: var(--surface-secondary-color);
+  --row-hover: var(--surface-hover-color);
+  --secondary-background: var(--surface-secondary-color);
+  --border-light: var(--divider-color);
+  --info-background: var(--info-light);
+  --info-border: var(--info-color);
+  --info-text: var(--info-color);
 }
 
 [data-theme="dark"] {
-  --background-color: #1a1a1a;
-  --card-background: #2d2d2d;
-  --text-color: #ffffff;
-  --text-secondary: #cccccc;
-  --border-color: #404040;
-  --border-light: #353535;
-  --input-background: #404040;
-  --header-background: #353535;
-  --row-hover: #353535;
-  --secondary-background: #404040;
-  --shadow-color: rgba(0, 0, 0, 0.3);
+  /* Dark theme inherits from global dark theme variables */
+  --card-background: var(--surface-color);
+  --text-color: var(--text-primary-color);
+  --text-secondary: var(--text-secondary-color);
+  --input-background: var(--surface-color);
+  --header-background: var(--surface-secondary-color);
+  --row-hover: var(--surface-hover-color);
+  --secondary-background: var(--surface-secondary-color);
+  --border-light: var(--divider-color);
 }
 
 /* Wide Modal for Statistics */

@@ -1,0 +1,275 @@
+/* Floating Action Button Styles */
+
+.fab-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  display: none; /* Alapból elrejtve, csak mobilon/tableten látszik */
+}
+
+/* Csak mobilon és tableten jelenjen meg */
+@media (max-width: 1024px) {
+  .fab-container {
+    display: block;
+  }
+}
+
+/* Overlay háttér */
+.fab-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: -1;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Fő FAB gomb */
+.fab-main-button {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 1;
+}
+
+.fab-main-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+}
+
+.fab-main-button:active {
+  transform: scale(0.95);
+}
+
+.fab-main-button.active {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  transform: rotate(45deg);
+}
+
+.fab-main-icon {
+  font-size: 24px;
+  color: white;
+  font-weight: 300;
+  transition: transform 0.3s ease;
+}
+
+.fab-main-button.active .fab-main-icon {
+  transform: rotate(-45deg);
+}
+
+/* Akció gombok konténer */
+.fab-actions {
+  position: absolute;
+  bottom: 72px;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  opacity: 0;
+  transform: translateY(20px);
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fab-container.open .fab-actions {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: all;
+}
+
+/* Egyedi akció gombok */
+.fab-action-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: white;
+  border: none;
+  border-radius: 28px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  min-height: 48px;
+  animation: slideIn 0.3s ease-out backwards;
+}
+
+.fab-action-button:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.fab-action-button:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.fab-action-button:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+.fab-action-button:nth-child(4) {
+  animation-delay: 0.2s;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.fab-action-button:hover {
+  transform: translateX(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.fab-action-button:active {
+  transform: translateX(-4px) scale(0.95);
+}
+
+.fab-icon {
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.fab-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+/* Dark theme támogatás */
+[data-theme="dark"] .fab-action-button {
+  background: #2d3748;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .fab-label {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .fab-main-button {
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.6);
+}
+
+[data-theme="dark"] .fab-action-button:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Tablet méret finomhangolás */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .fab-container {
+    bottom: 32px;
+    right: 32px;
+  }
+  
+  .fab-main-button {
+    width: 64px;
+    height: 64px;
+  }
+  
+  .fab-main-icon {
+    font-size: 28px;
+  }
+  
+  .fab-actions {
+    bottom: 84px;
+  }
+  
+  .fab-action-button {
+    padding: 14px 20px;
+    min-height: 52px;
+  }
+  
+  .fab-icon {
+    font-size: 28px;
+    width: 36px;
+    height: 36px;
+  }
+  
+  .fab-label {
+    font-size: 16px;
+  }
+}
+
+/* Kisebb mobilok */
+@media (max-width: 480px) {
+  .fab-container {
+    bottom: 16px;
+    right: 16px;
+  }
+  
+  .fab-main-button {
+    width: 52px;
+    height: 52px;
+  }
+  
+  .fab-main-icon {
+    font-size: 22px;
+  }
+  
+  .fab-actions {
+    bottom: 68px;
+  }
+  
+  .fab-action-button {
+    padding: 10px 14px;
+    min-height: 44px;
+  }
+  
+  .fab-icon {
+    font-size: 22px;
+    width: 28px;
+    height: 28px;
+  }
+  
+  .fab-label {
+    font-size: 13px;
+  }
+}
+
+/* Accessibility */
+.fab-main-button:focus,
+.fab-action-button:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+/* Animáció kikapcsolása ha a felhasználó preferálja */
+@media (prefers-reduced-motion: reduce) {
+  .fab-main-button,
+  .fab-actions,
+  .fab-action-button,
+  .fab-overlay {
+    animation: none;
+    transition: none;
+  }
+}

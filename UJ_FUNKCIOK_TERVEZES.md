@@ -489,9 +489,246 @@ Javasolt:
 - Spotify - főzés közben zene 🎵
 
 ### 4. **Offline Mód Fejlesztése** 📱
-- Teljes offline működés
-- Szinkronizálás WiFi-n
-- Konfliktus kezelés
+
+#### 4.1 Teljes Offline Működés
+**Cél:** Az alkalmazás minden funkciója elérhető internet nélkül is.
+
+**Implementáció:**
+```javascript
+// Service Worker stratégiák
+- Cache First: Statikus fájlok (CSS, JS, képek)
+- Network First, Cache Fallback: API hívások
+- Background Sync: Adatok szinkronizálása
+
+// IndexedDB használata
+- Termékek lokális tárolása
+- Bevásárlólista offline cache
+- Receptek letöltése offline használatra
+- Közműadatok mentése
+```
+
+**Funkciók offline módban:**
+- ✅ Termékek megtekintése
+- ✅ Új termék hozzáadása (szinkronizálásra vár)
+- ✅ Bevásárlólista szerkesztése
+- ✅ Receptek böngészése (letöltött receptek)
+- ✅ Statisztikák megtekintése (cache-elt adatok)
+- ⚠️ Háztartás váltás (csak cache-elt háztartások)
+- ❌ Új recept keresés (internet szükséges)
+
+#### 4.2 Szinkronizálás WiFi-n
+**Automatikus szinkronizálás:**
+```javascript
+// Background Sync API
+if ('serviceWorker' in navigator && 'sync' in registration) {
+  // Regisztráljuk a sync eseményt
+  await registration.sync.register('sync-inventory');
+  await registration.sync.register('sync-shopping-list');
+  await registration.sync.register('sync-utilities');
+}
+
+// Szinkronizálási stratégia
+1. Offline műveletek queue-ba kerülnek
+2. WiFi kapcsolat észlelése
+3. Queue feldolgozása prioritás szerint:
+   - Kritikus: Termék törlés, lejárat módosítás
+   - Magas: Új termék, mennyiség változás
+   - Közepes: Bevásárlólista módosítás
+   - Alacsony: Statisztika frissítés
+```
+
+**Szinkronizálási UI:**
+```
+┌─────────────────────────────────┐
+│ 🔄 Szinkronizálás folyamatban   │
+│ ━━━━━━━━━━━━━━━━━━━━━━ 75%    │
+│                                 │
+│ ✅ 12 termék szinkronizálva     │
+│ ⏳ 3 művelet várakozik          │
+│ ❌ 1 hiba (újrapróbálás...)     │
+└─────────────────────────────────┘
+```
+
+**Manuális szinkronizálás:**
+- Beállítások → "Szinkronizálás most" gomb
+- Pull-to-refresh minden listán
+- Automatikus szinkronizálás 5 percenként (WiFi-n)
+
+#### 4.3 Konfliktus Kezelés
+**Konfliktus típusok:**
+
+**1. Termék mennyiség konfliktus**
+```
+Offline: Tej 2L → 1L (felhasználás)
+Online:  Tej 2L → 3L (vásárlás másik tag által)
+
+Megoldás: Last-Write-Wins + Értesítés
+→ "⚠️ Tej mennyisége módosult másik tag által (3L). 
+   Felhasználásod (-1L) alkalmazva. Új mennyiség: 2L"
+```
+
+**2. Termék törlés konfliktus**
+```
+Offline: Tej törlése
+Online:  Tej mennyiség módosítva másik tag által
+
+Megoldás: Törlés prioritás + Megerősítés
+→ "⚠️ Tej módosítva lett mielőtt törölted volna. 
+   Biztosan törölni szeretnéd?"
+   [Mégse] [Törlés]
+```
+
+**3. Bevásárlólista konfliktus**
+```
+Offline: "Kenyér" hozzáadva
+Online:  "Kenyér" már a listán (másik tag adta hozzá)
+
+Megoldás: Merge + Mennyiség összegzés
+→ "ℹ️ Kenyér már a listán volt. Mennyiségek összegezve."
+```
+
+**Konfliktus feloldási algoritmus:**
+```javascript
+async function resolveConflict(localData, serverData) {
+  const conflictType = detectConflictType(localData, serverData);
+  
+  switch(conflictType) {
+    case 'QUANTITY_CONFLICT':
+      // Mindkét változás alkalmazása
+      return {
+        quantity: serverData.quantity + (localData.quantity - localData.originalQuantity),
+        resolvedBy: 'merge',
+        notification: 'Mennyiségek összegezve'
+      };
+      
+    case 'DELETE_CONFLICT':
+      // Felhasználó dönt
+      return await showConflictDialog({
+        title: 'Törlési konfliktus',
+        message: `${localData.name} módosítva lett. Törlöd?`,
+        options: ['Mégse', 'Törlés']
+      });
+      
+    case 'FIELD_CONFLICT':
+      // Timestamp alapú döntés
+      return localData.timestamp > serverData.timestamp 
+        ? localData 
+        : serverData;
+        
+    default:
+      // Server wins alapértelmezetten
+      return serverData;
+  }
+}
+```
+
+#### 4.4 Offline Indikátor
+**UI elemek:**
+```
+┌─────────────────────────────────┐
+│ 📡 Offline mód                  │ ← Header banner
+│ 3 művelet szinkronizálásra vár  │
+└─────────────────────────────────┘
+
+Status ikon a navigációban:
+🟢 Online - Minden szinkronizálva
+🟡 Online - Szinkronizálás folyamatban
+🔴 Offline - Műveletek queue-ban
+⚠️ Offline - Szinkronizálási hiba
+```
+
+#### 4.5 Adatkezelés Offline Módban
+**LocalStorage vs IndexedDB:**
+```javascript
+// LocalStorage (max 5-10MB)
+- Felhasználói beállítások
+- Téma preferencia
+- Utolsó háztartás ID
+- Szinkronizálási timestamp
+
+// IndexedDB (korlátlan*)
+- Teljes termék lista
+- Bevásárlólista elemek
+- Letöltött receptek
+- Közműadatok (utolsó 12 hónap)
+- Statisztikai adatok cache
+```
+
+**Cache stratégia:**
+```javascript
+// Cache időtartamok
+- Termékek: 24 óra
+- Receptek: 7 nap
+- Statisztikák: 1 óra
+- Közműadatok: 30 nap
+
+// Cache méret limit
+- Maximum 50MB per háztartás
+- Automatikus tisztítás régi adatoknál
+- Felhasználó által törölhető cache
+```
+
+#### 4.6 Implementációs Lépések
+
+**1. Fázis - Service Worker Setup** (1 hét)
+- [ ] Service Worker regisztráció
+- [ ] Cache stratégiák implementálása
+- [ ] Offline page létrehozása
+- [ ] Network status detection
+
+**2. Fázis - IndexedDB Integráció** (2 hét)
+- [ ] IndexedDB schema definiálás
+- [ ] CRUD műveletek offline támogatása
+- [ ] Adatok szinkronizálása IndexedDB-vel
+- [ ] Migration stratégia régi adatokhoz
+
+**3. Fázis - Background Sync** (1 hét)
+- [ ] Background Sync API integráció
+- [ ] Sync queue kezelés
+- [ ] Retry logika hibák esetén
+- [ ] Prioritás alapú szinkronizálás
+
+**4. Fázis - Konfliktus Kezelés** (2 hét)
+- [ ] Konfliktus detektálás
+- [ ] Feloldási algoritmusok
+- [ ] UI dialógok konfliktusokhoz
+- [ ] Tesztelés különböző scenariókkal
+
+**5. Fázis - UI/UX Fejlesztések** (1 hét)
+- [ ] Offline indikátor
+- [ ] Szinkronizálási progress bar
+- [ ] Toast értesítések szinkronizáláshoz
+- [ ] Pull-to-refresh implementálás
+
+**6. Fázis - Tesztelés** (1 hét)
+- [ ] Offline funkciók tesztelése
+- [ ] Szinkronizálási tesztek
+- [ ] Konfliktus scenariók tesztelése
+- [ ] Performance tesztek
+
+**Összesen: ~8 hét fejlesztés**
+
+#### 4.7 Technikai Stack
+```javascript
+// Service Worker
+- Workbox (Google's PWA library)
+- Cache API
+- Background Sync API
+
+// Adattárolás
+- IndexedDB (Dexie.js wrapper)
+- LocalStorage (kis adatok)
+
+// Szinkronizálás
+- Axios interceptors
+- Retry mechanizmus (exponential backoff)
+- Queue kezelés (prioritás alapú)
+
+// Monitoring
+- Online/Offline event listeners
+- Network Information API
+- Performance API
+```
 
 ---
 

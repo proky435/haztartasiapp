@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import shoppingListService from '../services/shoppingListService';
 import { getAutoSuggestions } from '../services/consumptionService';
 import './ShoppingList.css';
@@ -65,7 +66,7 @@ function ShoppingList({ onItemsChange, currentHousehold }) {
 
   const handleShowSuggestions = async () => {
     if (!currentHousehold?.id) {
-      alert('Nincs kiválasztott háztartás');
+      toast.warning('Nincs kiválasztott háztartás! ⚠️');
       return;
     }
 
@@ -83,7 +84,7 @@ function ShoppingList({ onItemsChange, currentHousehold }) {
       }
     } catch (error) {
       console.error('Error loading suggestions:', error);
-      alert('Hiba a javaslatok betöltésekor: ' + (error.message || 'Ismeretlen hiba'));
+      toast.error('Hiba a javaslatok betöltésekor: ' + (error.message || 'Ismeretlen hiba'));
       setShowSuggestionsModal(false);
     } finally {
       setLoadingSuggestions(false);
@@ -97,10 +98,10 @@ function ShoppingList({ onItemsChange, currentHousehold }) {
         quantity: suggestion.suggestedQuantity || 1
       });
       await loadShoppingItems();
-      alert(`${suggestion.productName} hozzáadva a listához!`);
+      toast.success(`${suggestion.productName} hozzáadva a listához! 🛍️`);
     } catch (error) {
       console.error('Error adding suggestion:', error);
-      alert('Hiba a tétel hozzáadásakor');
+      toast.error('Hiba a tétel hozzáadásakor!');
     }
   };
 
@@ -136,9 +137,10 @@ function ShoppingList({ onItemsChange, currentHousehold }) {
       
       setNewItem('');
       await loadShoppingItems(); // Frissítjük a listát
+      toast.success('Tétel hozzáadva! ✅');
     } catch (error) {
       console.error('Error adding item:', error);
-      alert('Hiba történt a tétel hozzáadásakor: ' + error.message);
+      toast.error('Hiba történt a tétel hozzáadásakor: ' + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -167,7 +169,7 @@ function ShoppingList({ onItemsChange, currentHousehold }) {
       await loadShoppingItems(); // Frissítjük a listát
     } catch (error) {
       console.error('Error updating item:', error);
-      alert('Hiba történt a tétel frissítésekor: ' + error.message);
+      toast.error('Hiba történt a tétel frissítésekor: ' + error.message);
     }
   };
 
